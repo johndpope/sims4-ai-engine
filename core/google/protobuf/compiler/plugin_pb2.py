@@ -1,0 +1,28 @@
+from google.protobuf import descriptor
+from google.protobuf import message
+from google.protobuf import reflection
+from google.protobuf import descriptor_pb2
+import google.protobuf.descriptor_pb2
+DESCRIPTOR = descriptor.FileDescriptor(name='google/protobuf/compiler/plugin.proto', package='google.protobuf.compiler', serialized_pb='\n%google/protobuf/compiler/plugin.proto\x12\x18google.protobuf.compiler\x1a google/protobuf/descriptor.proto"}\n\x14CodeGeneratorRequest\x12\x18\n\x10file_to_generate\x18\x01 \x03(\t\x12\x11\n\tparameter\x18\x02 \x01(\t\x128\n\nproto_file\x18\x0f \x03(\x0b2$.google.protobuf.FileDescriptorProto"ª\x01\n\x15CodeGeneratorResponse\x12\r\n\x05error\x18\x01 \x01(\t\x12B\n\x04file\x18\x0f \x03(\x0b24.google.protobuf.compiler.CodeGeneratorResponse.File\x1a>\n\x04File\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x17\n\x0finsertion_point\x18\x02 \x01(\t\x12\x0f\n\x07content\x18\x0f \x01(\t')
+_CODEGENERATORREQUEST = descriptor.Descriptor(name='CodeGeneratorRequest', full_name='google.protobuf.compiler.CodeGeneratorRequest', filename=None, file=DESCRIPTOR, containing_type=None, fields=[descriptor.FieldDescriptor(name='file_to_generate', full_name='google.protobuf.compiler.CodeGeneratorRequest.file_to_generate', index=0, number=1, type=9, cpp_type=9, label=3, has_default_value=False, default_value=[], message_type=None, enum_type=None, containing_type=None, is_extension=False, extension_scope=None, options=None), descriptor.FieldDescriptor(name='parameter', full_name='google.protobuf.compiler.CodeGeneratorRequest.parameter', index=1, number=2, type=9, cpp_type=9, label=1, has_default_value=False, default_value=b''.decode('utf-8'), message_type=None, enum_type=None, containing_type=None, is_extension=False, extension_scope=None, options=None), descriptor.FieldDescriptor(name='proto_file', full_name='google.protobuf.compiler.CodeGeneratorRequest.proto_file', index=2, number=15, type=11, cpp_type=10, label=3, has_default_value=False, default_value=[], message_type=None, enum_type=None, containing_type=None, is_extension=False, extension_scope=None, options=None)], extensions=[], nested_types=[], enum_types=[], options=None, is_extendable=False, extension_ranges=[], serialized_start=101, serialized_end=226)
+_CODEGENERATORRESPONSE_FILE = descriptor.Descriptor(name='File', full_name='google.protobuf.compiler.CodeGeneratorResponse.File', filename=None, file=DESCRIPTOR, containing_type=None, fields=[descriptor.FieldDescriptor(name='name', full_name='google.protobuf.compiler.CodeGeneratorResponse.File.name', index=0, number=1, type=9, cpp_type=9, label=1, has_default_value=False, default_value=b''.decode('utf-8'), message_type=None, enum_type=None, containing_type=None, is_extension=False, extension_scope=None, options=None), descriptor.FieldDescriptor(name='insertion_point', full_name='google.protobuf.compiler.CodeGeneratorResponse.File.insertion_point', index=1, number=2, type=9, cpp_type=9, label=1, has_default_value=False, default_value=b''.decode('utf-8'), message_type=None, enum_type=None, containing_type=None, is_extension=False, extension_scope=None, options=None), descriptor.FieldDescriptor(name='content', full_name='google.protobuf.compiler.CodeGeneratorResponse.File.content', index=2, number=15, type=9, cpp_type=9, label=1, has_default_value=False, default_value=b''.decode('utf-8'), message_type=None, enum_type=None, containing_type=None, is_extension=False, extension_scope=None, options=None)], extensions=[], nested_types=[], enum_types=[], options=None, is_extendable=False, extension_ranges=[], serialized_start=337, serialized_end=399)
+_CODEGENERATORRESPONSE = descriptor.Descriptor(name='CodeGeneratorResponse', full_name='google.protobuf.compiler.CodeGeneratorResponse', filename=None, file=DESCRIPTOR, containing_type=None, fields=[descriptor.FieldDescriptor(name='error', full_name='google.protobuf.compiler.CodeGeneratorResponse.error', index=0, number=1, type=9, cpp_type=9, label=1, has_default_value=False, default_value=b''.decode('utf-8'), message_type=None, enum_type=None, containing_type=None, is_extension=False, extension_scope=None, options=None), descriptor.FieldDescriptor(name='file', full_name='google.protobuf.compiler.CodeGeneratorResponse.file', index=1, number=15, type=11, cpp_type=10, label=3, has_default_value=False, default_value=[], message_type=None, enum_type=None, containing_type=None, is_extension=False, extension_scope=None, options=None)], extensions=[], nested_types=[_CODEGENERATORRESPONSE_FILE], enum_types=[], options=None, is_extendable=False, extension_ranges=[], serialized_start=229, serialized_end=399)
+_CODEGENERATORREQUEST.fields_by_name['proto_file'].message_type = google.protobuf.descriptor_pb2._FILEDESCRIPTORPROTO
+_CODEGENERATORRESPONSE_FILE.containing_type = _CODEGENERATORRESPONSE
+_CODEGENERATORRESPONSE.fields_by_name['file'].message_type = _CODEGENERATORRESPONSE_FILE
+DESCRIPTOR.message_types_by_name['CodeGeneratorRequest'] = _CODEGENERATORREQUEST
+DESCRIPTOR.message_types_by_name['CodeGeneratorResponse'] = _CODEGENERATORRESPONSE
+
+class CodeGeneratorRequest(message.Message, metaclass=reflection.GeneratedProtocolMessageType):
+    __qualname__ = 'CodeGeneratorRequest'
+    DESCRIPTOR = _CODEGENERATORREQUEST
+
+class CodeGeneratorResponse(message.Message, metaclass=reflection.GeneratedProtocolMessageType):
+    __qualname__ = 'CodeGeneratorResponse'
+
+    class File(message.Message, metaclass=reflection.GeneratedProtocolMessageType):
+        __qualname__ = 'CodeGeneratorResponse.File'
+        DESCRIPTOR = _CODEGENERATORRESPONSE_FILE
+
+    DESCRIPTOR = _CODEGENERATORRESPONSE
+
