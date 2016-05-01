@@ -1,4 +1,3 @@
-
 class HarmonicMeanAccumulator:
     __qualname__ = 'HarmonicMeanAccumulator'
 
@@ -22,5 +21,4 @@ class HarmonicMeanAccumulator:
     def value(self):
         if self._fault:
             return 0
-        return self.num_items/self.total
-
+        return self.num_items / self.total

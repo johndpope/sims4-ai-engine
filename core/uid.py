@@ -1,5 +1,6 @@
 import sims4.math
 
+
 class UniqueIdGenerator:
     __qualname__ = 'UniqueIdGenerator'
     __slots__ = ('next_uid', 'min_uid', 'max_uid')
@@ -11,7 +12,8 @@ class UniqueIdGenerator:
         except:
             raise TypeError('min_uid and max_uid must be ints')
         if min_uid >= max_uid:
-            raise ValueError('({}, {}) is not a valid unique id range.'.format(min_uid, max_uid))
+            raise ValueError('({}, {}) is not a valid unique id range.'.format(
+                min_uid, max_uid))
         self.min_uid = min_uid
         self.max_uid = max_uid
         self.next_uid = min_uid
@@ -32,13 +34,15 @@ class UniqueIdGenerator:
             newobj.next_uid = newobj.min_uid
         return newobj
 
+
 class UniqueId(UniqueIdGenerator):
     __qualname__ = 'UniqueId'
-    __slots__ = ('uid_attr',)
+    __slots__ = ('uid_attr', )
 
     def __init__(self, uid_attr, *args, **kwargs):
         if not isinstance(uid_attr, str):
-            raise TypeError('uid_attr must be a string, not {}'.format(type(uid_attr)))
+            raise TypeError('uid_attr must be a string, not {}'.format(type(
+                uid_attr)))
         super().__init__(*args, **kwargs)
         self.uid_attr = uid_attr
 
@@ -49,11 +53,10 @@ class UniqueId(UniqueIdGenerator):
         setattr(instance, self.uid_attr, uid)
         return uid
 
-def unique_id(uid_attr, *args, **kwargs):
 
+def unique_id(uid_attr, *args, **kwargs):
     def dec(cls):
         setattr(cls, uid_attr, UniqueId(uid_attr, *args, **kwargs))
         return cls
 
     return dec
-

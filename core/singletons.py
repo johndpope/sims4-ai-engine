@@ -1,4 +1,3 @@
-
 class SingletonMetaclass(type):
     __qualname__ = 'SingletonMetaclass'
 
@@ -8,6 +7,7 @@ class SingletonMetaclass(type):
         except AttributeError:
             cls._instance = type.__call__(cls)
             return cls._instance
+
 
 class SingletonType(metaclass=SingletonMetaclass):
     __qualname__ = 'SingletonType'
@@ -32,17 +32,21 @@ class SingletonType(metaclass=SingletonMetaclass):
     def __reload_update_class__(oldobj, newobj, update_fn):
         return oldobj
 
+
 class SingletonEvaluatingFalseType(SingletonType):
     __qualname__ = 'SingletonEvaluatingFalseType'
 
     def __bool__(self):
         return False
 
+
 class DefaultType(SingletonEvaluatingFalseType):
     __qualname__ = 'DefaultType'
 
+
 class UnsetType(SingletonEvaluatingFalseType):
     __qualname__ = 'UnsetType'
+
 
 DEFAULT = DefaultType()
 UNSET = UnsetType()

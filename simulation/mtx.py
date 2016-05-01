@@ -21,9 +21,11 @@ except ImportError:
         def show_mtx_lock_icon(guid):
             pass
 
+
 has_entitlement = _zone.has_entitlement
 is_displayable = _zone.is_displayable
 show_mtx_lock_icon = _zone.show_mtx_lock_icon
+
 
 def register_entitlement_unlock_callback(guid, fn):
     handlers = services.current_zone().entitlement_unlock_handlers
@@ -33,6 +35,7 @@ def register_entitlement_unlock_callback(guid, fn):
         handlers[guid] = call_list
     call_list.append(fn)
 
+
 @sims4.utils.exception_protected(None)
 def c_api_entitlement_unlocked(zone_id, account_id, guid):
     handlers = services.get_zone(zone_id).entitlement_unlock_handlers
@@ -40,7 +43,8 @@ def c_api_entitlement_unlocked(zone_id, account_id, guid):
     if call_list and call_list(account_id, guid):
         handlers.pop(guid)
 
-@sims4.utils.exception_protected(None)
-def c_api_entitlement_purchase_failed(zone_id, account_id, guid, failure_reason):
-    pass
 
+@sims4.utils.exception_protected(None)
+def c_api_entitlement_purchase_failed(zone_id, account_id, guid,
+                                      failure_reason):
+    pass

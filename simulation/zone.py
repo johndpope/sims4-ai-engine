@@ -37,8 +37,11 @@ import sims4.random
 import world.spawn_point
 import zone_types
 logger = sims4.log.Logger('Zone')
-TickMetric = collections.namedtuple('TickMetric', ['absolute_ticks', 'sim_now', 'clock_speed', 'clock_speed_multiplier', 'game_time', 'multiplier_type'])
+TickMetric = collections.namedtuple(
+    'TickMetric', ['absolute_ticks', 'sim_now', 'clock_speed',
+                   'clock_speed_multiplier', 'game_time', 'multiplier_type'])
 ZONE_OBJECT_LEAK_DISABLE_REASON = 'Zone shutting down'
+
 
 class Zone:
     __qualname__ = 'Zone'
@@ -57,7 +60,8 @@ class Zone:
         self.all_transition_controllers = weakref.WeakSet()
         self.navmesh_change_callbacks = CallableListPreventingRecursion()
         self.wall_contour_update_callbacks = CallableListPreventingRecursion()
-        self.foundation_and_level_height_update_callbacks = CallableListPreventingRecursion()
+        self.foundation_and_level_height_update_callbacks = CallableListPreventingRecursion(
+        )
         self.navmesh_id = None
         self.object_count = 0
         self.is_in_build_buy = False
@@ -130,7 +134,10 @@ class Zone:
 
     @property
     def is_first_visit_to_zone(self):
-        logger.assert_raise(self._first_visit_to_zone is not None, 'You must wait until after load_zone() has been called before checking is_first_visit_to_zone.', owner='sscholl')
+        logger.assert_raise(
+            self._first_visit_to_zone is not None,
+            'You must wait until after load_zone() has been called before checking is_first_visit_to_zone.',
+            owner='sscholl')
         return self._first_visit_to_zone
 
     def start_services(self, gameplay_zone_data, save_slot_data):
@@ -169,14 +176,41 @@ class Zone:
         from sims4.sim_irq_service import SimIrqService
         from venues.venue_service import VenueService
         from services.reset_and_delete_service import ResetAndDeleteService
-        services = [GameClock(), TimeService(), ConfigService(), SimIrqService(), EventManager(), ClientManager(manager_id=MGR_CLIENT), HouseholdManager(manager_id=MGR_HOUSEHOLD), ResetAndDeleteService(), ObjectManager(manager_id=MGR_OBJECT), InventoryManager(manager_id=MGR_OBJECT), AgeService(), SimInfoManager(manager_id=MGR_SIM_INFO), PropManager(manager_id=MGR_OBJECT), PostureGraphService(), ArbAccumulatorService(None, None), AutonomyService(), SituationManager(manager_id=MGR_SITUATION), SimFilterService(), PartyManager(manager_id=MGR_PARTY), SocialGroupManager(manager_id=MGR_SOCIAL_GROUP), UiDialogService(), ObjectClusterService(), SocialGroupClusterService(), TravelService(), NeighborhoodPopulationService(), ServiceNpcService(), LotSpawnerService(), VenueService(), AmbientService(), StoryProgressionService(), ZoneSpinUpService(), PrivacyService(), FireService(), BroadcasterService(), CleanupService(), SuperSpeedThreeService(), CareerService(), MasterController()]
+        services = [
+            GameClock(), TimeService(), ConfigService(), SimIrqService(),
+            EventManager(), ClientManager(manager_id=MGR_CLIENT),
+            HouseholdManager(manager_id=MGR_HOUSEHOLD),
+            ResetAndDeleteService(), ObjectManager(manager_id=MGR_OBJECT),
+            InventoryManager(manager_id=MGR_OBJECT), AgeService(),
+            SimInfoManager(manager_id=MGR_SIM_INFO),
+            PropManager(manager_id=MGR_OBJECT), PostureGraphService(),
+            ArbAccumulatorService(None, None), AutonomyService(),
+            SituationManager(manager_id=MGR_SITUATION), SimFilterService(),
+            PartyManager(manager_id=MGR_PARTY),
+            SocialGroupManager(manager_id=MGR_SOCIAL_GROUP), UiDialogService(),
+            ObjectClusterService(), SocialGroupClusterService(),
+            TravelService(), NeighborhoodPopulationService(),
+            ServiceNpcService(), LotSpawnerService(), VenueService(),
+            AmbientService(), StoryProgressionService(), ZoneSpinUpService(),
+            PrivacyService(), FireService(), BroadcasterService(),
+            CleanupService(), SuperSpeedThreeService(), CareerService(),
+            MasterController()
+        ]
         from sims4.service_manager import ServiceManager
         self.service_manager = ServiceManager()
         for service in services:
             self.service_manager.register_service(service)
         self.client_object_managers = set()
-        self.service_manager.start_services(zone=self, gameplay_zone_data=gameplay_zone_data, save_slot_data=save_slot_data)
-        self.navmesh_alarm_handle = alarms.add_alarm_real_time(self, clock.interval_in_real_seconds(1), self._check_navmesh_updated_alarm_callback, repeating=True, use_sleep_time=False)
+        self.service_manager.start_services(
+            zone=self,
+            gameplay_zone_data=gameplay_zone_data,
+            save_slot_data=save_slot_data)
+        self.navmesh_alarm_handle = alarms.add_alarm_real_time(
+            self,
+            clock.interval_in_real_seconds(1),
+            self._check_navmesh_updated_alarm_callback,
+            repeating=True,
+            use_sleep_time=False)
         self._royalty_alarm_manager.start_schedule()
 
     def update(self, absolute_ticks):
@@ -200,7 +234,14 @@ class Zone:
 
     def _gather_tick_metrics(self, absolute_ticks):
         if self._tick_metrics is not None:
-            self._tick_metrics.append(TickMetric(absolute_ticks=absolute_ticks, sim_now=self.time_service.sim_now, clock_speed=int(self.game_clock.clock_speed()), clock_speed_multiplier=self.game_clock.current_clock_speed_scale(), game_time=self.game_clock.now(), multiplier_type=self.game_clock.clock_speed_multiplier_type))
+            self._tick_metrics.append(TickMetric(
+                absolute_ticks=absolute_ticks,
+                sim_now=self.time_service.sim_now,
+                clock_speed=int(self.game_clock.clock_speed()),
+                clock_speed_multiplier=
+                self.game_clock.current_clock_speed_scale(),
+                game_time=self.game_clock.now(),
+                multiplier_type=self.game_clock.clock_speed_multiplier_type))
 
     def start_gathering_tick_metrics(self):
         self._tick_metrics = []
@@ -213,7 +254,10 @@ class Zone:
         return self._tick_metrics
 
     def do_zone_spin_up(self, household_id, active_sim_id):
-        self.zone_spin_up_service.set_household_id_and_client_and_active_sim_id(household_id=household_id, client=self._client, active_sim_id=active_sim_id)
+        self.zone_spin_up_service.set_household_id_and_client_and_active_sim_id(
+            household_id=household_id,
+            client=self._client,
+            active_sim_id=active_sim_id)
         self.game_clock.enter_zone_spin_up()
         self.zone_spin_up_service.start_playable_sequence()
         while not self.zone_spin_up_service.is_finished:
@@ -228,7 +272,10 @@ class Zone:
         return True
 
     def do_build_mode_zone_spin_up(self, household_id):
-        self.zone_spin_up_service.set_household_id_and_client_and_active_sim_id(household_id=household_id, client=self._client, active_sim_id=None)
+        self.zone_spin_up_service.set_household_id_and_client_and_active_sim_id(
+            household_id=household_id,
+            client=self._client,
+            active_sim_id=None)
         self.zone_spin_up_service.start_build_mode_sequence()
         while not self.zone_spin_up_service.is_finished:
             self.zone_spin_up_service.update()
@@ -263,7 +310,8 @@ class Zone:
         args_dict = vars(args)
         shutdown_commands_file = args_dict.get('on_shutdown_commands')
         if shutdown_commands_file:
-            clients = list(client for client in services.client_manager().values())
+            clients = list(client
+                           for client in services.client_manager().values())
             if not clients:
                 client_id = 0
             else:
@@ -272,7 +320,8 @@ class Zone:
 
     def on_teardown(self, client):
         logger.debug('Zone teardown started')
-        indexed_manager.IndexedManager.add_gc_collect_disable_reason(ZONE_OBJECT_LEAK_DISABLE_REASON)
+        indexed_manager.IndexedManager.add_gc_collect_disable_reason(
+            ZONE_OBJECT_LEAK_DISABLE_REASON)
         self.on_soak_end()
         self._set_zone_state(zone_types.ZoneState.SHUTDOWN_STARTED)
         logger.debug('Zone teardown: disable event manager')
@@ -289,7 +338,8 @@ class Zone:
         all_objects.extend(self.prop_manager.values())
         all_objects.extend(self.inventory_manager.values())
         all_objects.extend(self.object_manager.values())
-        services.get_reset_and_delete_service().trigger_batch_destroy(all_objects)
+        services.get_reset_and_delete_service().trigger_batch_destroy(
+            all_objects)
         logger.debug('Zone teardown: destroy sim infos')
         self.sim_info_manager.destroy_all_objects()
         logger.debug('Zone teardown:  services.on_client_disconnect')
@@ -303,21 +353,31 @@ class Zone:
     def ensure_callable_list_is_empty(self, callable_list):
         while callable_list:
             callback = callable_list.pop()
-            logger.error('Callback {} from CallableList {} was not unregistered before shutdown.', callback, callable_list, owner='tastle')
+            logger.error(
+                'Callback {} from CallableList {} was not unregistered before shutdown.',
+                callback,
+                callable_list,
+                owner='tastle')
 
     def on_remove(self):
-        logger.assert_log(self.is_zone_shutting_down, 'Attempting to shutdown the zone when it is not ready:{}', self._zone_state, owner='sscholl')
+        logger.assert_log(
+            self.is_zone_shutting_down,
+            'Attempting to shutdown the zone when it is not ready:{}',
+            self._zone_state,
+            owner='sscholl')
         self.client_object_managers.clear()
         interactions.constraints.RequiredSlot.clear_required_slot_cache()
         self.service_manager.stop_services(self)
         self.ensure_callable_list_is_empty(self.navmesh_change_callbacks)
         self.ensure_callable_list_is_empty(self.wall_contour_update_callbacks)
-        self.ensure_callable_list_is_empty(self.foundation_and_level_height_update_callbacks)
+        self.ensure_callable_list_is_empty(
+            self.foundation_and_level_height_update_callbacks)
         self._zone_state_callbacks.clear()
         caches.clear_all_caches(force=True)
         gc.collect()
         if self.id != areaserver.WORLDBUILDER_ZONE_ID:
-            indexed_manager.IndexedManager.remove_gc_collect_disable_reason(ZONE_OBJECT_LEAK_DISABLE_REASON)
+            indexed_manager.IndexedManager.remove_gc_collect_disable_reason(
+                ZONE_OBJECT_LEAK_DISABLE_REASON)
 
     def on_objects_loaded(self):
         self._set_zone_state(zone_types.ZoneState.OBJECTS_LOADED)
@@ -327,23 +387,35 @@ class Zone:
         self._set_zone_state(zone_types.ZoneState.CLIENT_CONNECTED)
 
     def on_households_and_sim_infos_loaded(self):
-        self._set_zone_state(zone_types.ZoneState.HOUSEHOLDS_AND_SIM_INFOS_LOADED)
+        self._set_zone_state(
+            zone_types.ZoneState.HOUSEHOLDS_AND_SIM_INFOS_LOADED)
 
     def on_loading_screen_animation_finished(self):
         logger.debug('on_loading_screen_animation_finished')
         services.game_clock_service().restore_saved_clock_speed()
         services.sim_info_manager().on_loading_screen_animation_finished()
-        services.get_event_manager().process_events_for_household(test_events.TestEvent.SimTravel, services.active_household(), zone_id=self.id)
+        services.get_event_manager().process_events_for_household(
+            test_events.TestEvent.SimTravel,
+            services.active_household(),
+            zone_id=self.id)
 
     def _set_zone_state(self, state):
-        logger.assert_raise(self._zone_state + 1 == state or state == zone_types.ZoneState.SHUTDOWN_STARTED, 'Illegal zone state change: {} to {}', self._zone_state, state, owner='sscholl')
+        logger.assert_raise(self._zone_state + 1 == state or
+                            state == zone_types.ZoneState.SHUTDOWN_STARTED,
+                            'Illegal zone state change: {} to {}',
+                            self._zone_state,
+                            state,
+                            owner='sscholl')
         self._zone_state = state
         if state in self._zone_state_callbacks:
             self._zone_state_callbacks[state]()
             del self._zone_state_callbacks[state]
 
     def register_callback(self, callback_type, callback):
-        logger.assert_raise(self._zone_state != zone_types.ZoneState.SHUTDOWN_STARTED, 'Attempting to register callbacks after shutdown has started', owner='sscholl')
+        logger.assert_raise(
+            self._zone_state != zone_types.ZoneState.SHUTDOWN_STARTED,
+            'Attempting to register callbacks after shutdown has started',
+            owner='sscholl')
         if callback_type <= self._zone_state:
             callback()
             return
@@ -376,7 +448,8 @@ class Zone:
     def setup_spawner_data(self, spawner_data_array, zone_id):
         self._spawner_data = {}
         for (index, spawner_data) in enumerate(spawner_data_array):
-            self._spawner_data[index] = world.spawn_point.WorldSpawnPoint(spawner_data, index, self.id)
+            self._spawner_data[index] = world.spawn_point.WorldSpawnPoint(
+                spawner_data, index, self.id)
 
     def add_dynamic_spawn_point(self, spawn_point):
         self._dynamic_spawn_points[spawn_point.spawn_point_id] = spawn_point
@@ -387,7 +460,9 @@ class Zone:
     def supress_goals_for_spawn_points(self):
         if not self._spawner_data:
             return
-        self.spawn_point_ids = frozenset(spawn_point.spawn_point_id for spawn_point in self._spawner_data.values())
+        self.spawn_point_ids = frozenset(
+            spawn_point.spawn_point_id
+            for spawn_point in self._spawner_data.values())
         for spawn_point in self._spawner_data.values():
             spawn_point.add_goal_suppression_region_to_quadtree()
 
@@ -397,7 +472,11 @@ class Zone:
             objects_to_ignore.add(spawn_point.spawn_point_id)
         return Constraint(objects_to_ignore=objects_to_ignore)
 
-    def _get_spawn_points_with_lot_id_and_tags(self, lot_id=None, sim_spawner_tags=None, ignore_point_validation=False, except_lot_id=None):
+    def _get_spawn_points_with_lot_id_and_tags(self,
+                                               lot_id=None,
+                                               sim_spawner_tags=None,
+                                               ignore_point_validation=False,
+                                               except_lot_id=None):
         spawn_points = []
         if not sim_spawner_tags:
             return
@@ -412,44 +491,73 @@ class Zone:
                     spawn_points.append(spawn_point)
         return spawn_points
 
-    def get_spawn_point(self, lot_id=None, sim_spawner_tags=None, must_have_tags=False, ignore_point_validation=False):
+    def get_spawn_point(self,
+                        lot_id=None,
+                        sim_spawner_tags=None,
+                        must_have_tags=False,
+                        ignore_point_validation=False):
         spawn_points = list(self.spawn_points_gen())
         if not spawn_points:
             return
-        spawn_points_with_tags = self._get_spawn_points_with_lot_id_and_tags(lot_id=lot_id, sim_spawner_tags=sim_spawner_tags, ignore_point_validation=ignore_point_validation)
+        spawn_points_with_tags = self._get_spawn_points_with_lot_id_and_tags(
+            lot_id=lot_id,
+            sim_spawner_tags=sim_spawner_tags,
+            ignore_point_validation=ignore_point_validation)
         if spawn_points_with_tags:
             return random.choice(spawn_points_with_tags)
         if not must_have_tags:
             return random.choice(spawn_points)
         return
 
-    def get_spawn_points_constraint(self, sim_info=None, lot_id=None, sim_spawner_tags=None, except_lot_id=None):
+    def get_spawn_points_constraint(self,
+                                    sim_info=None,
+                                    lot_id=None,
+                                    sim_spawner_tags=None,
+                                    except_lot_id=None):
         spawn_point_option = SpawnPointOption.SPAWN_ANY_POINT_WITH_CONSTRAINT_TAGS
         search_tags = sim_spawner_tags
         spawn_point_id = None
         original_spawn_point = None
         spawn_point_option = sim_info.spawn_point_option if sim_info.spawn_point_option is not None else SpawnPointOption.SPAWN_SAME_POINT
         spawn_point_id = sim_info.spawn_point_id
-        original_spawn_point = self._spawner_data[spawn_point_id] if spawn_point_id is not None and spawn_point_id in self._spawner_data.keys() else None
-        if sim_info is not None and sim_spawner_tags is None and (spawn_point_option == SpawnPointOption.SPAWN_ANY_POINT_WITH_SAVED_TAGS or spawn_point_option == SpawnPointOption.SPAWN_DIFFERENT_POINT_WITH_SAVED_TAGS):
+        original_spawn_point = self._spawner_data[
+            spawn_point_id] if spawn_point_id is not None and spawn_point_id in self._spawner_data.keys(
+            ) else None
+        if sim_info is not None and sim_spawner_tags is None and (
+                spawn_point_option ==
+                SpawnPointOption.SPAWN_ANY_POINT_WITH_SAVED_TAGS or
+                spawn_point_option ==
+                SpawnPointOption.SPAWN_DIFFERENT_POINT_WITH_SAVED_TAGS):
             search_tags = sim_info.spawner_tags
         points = []
         if search_tags is not None:
-            spawn_points_with_tags = self._get_spawn_points_with_lot_id_and_tags(lot_id=lot_id, sim_spawner_tags=search_tags, except_lot_id=except_lot_id)
+            spawn_points_with_tags = self._get_spawn_points_with_lot_id_and_tags(
+                lot_id=lot_id,
+                sim_spawner_tags=search_tags,
+                except_lot_id=except_lot_id)
             if spawn_points_with_tags:
                 for spawn_point in spawn_points_with_tags:
                     if spawn_point_option == SpawnPointOption.SPAWN_DIFFERENT_POINT_WITH_SAVED_TAGS and original_spawn_point and spawn_point.spawn_point_id == original_spawn_point.spawn_point_id:
                         pass
-                    position_constraints = spawn_point.get_position_constraints()
+                    position_constraints = spawn_point.get_position_constraints(
+                    )
                     while position_constraints:
                         points.extend(position_constraints)
                 if spawn_point_option == SpawnPointOption.SPAWN_DIFFERENT_POINT_WITH_SAVED_TAGS and original_spawn_point and points:
-                    comparable_spawn_point_center = sims4.math.Vector3(original_spawn_point.center.x, 0.0, original_spawn_point.center.z)
-                    weighted_points = [((comparable_spawn_point_center - point.single_point()[0]).magnitude(), point) for point in points]
-                    selected_spawn_point = sims4.random.weighted_random_item(weighted_points)
-                    return interactions.constraints.create_constraint_set(set(selected_spawn_point))
+                    comparable_spawn_point_center = sims4.math.Vector3(
+                        original_spawn_point.center.x, 0.0,
+                        original_spawn_point.center.z)
+                    weighted_points = [(
+                        (comparable_spawn_point_center -
+                         point.single_point()[0]).magnitude(), point)
+                                       for point in points]
+                    selected_spawn_point = sims4.random.weighted_random_item(
+                        weighted_points)
+                    return interactions.constraints.create_constraint_set(set(
+                        selected_spawn_point))
                 if points:
-                    return interactions.constraints.create_constraint_set(points)
+                    return interactions.constraints.create_constraint_set(
+                        points)
         if spawn_point_option == SpawnPointOption.SPAWN_SAME_POINT and original_spawn_point:
             points = original_spawn_point.get_position_constraints()
             if points:
@@ -460,22 +568,28 @@ class Zone:
                 points.extend(position_constraints)
         if points:
             return interactions.constraints.create_constraint_set(points)
-        logger.warn('There are no spawn locations on this lot.  The corners of the lot are being used instead: {}', services.current_zone().lot, owner='rmccord')
+        logger.warn(
+            'There are no spawn locations on this lot.  The corners of the lot are being used instead: {}',
+            services.current_zone().lot,
+            owner='rmccord')
         return self.get_lot_corners_constraint_set()
 
     def get_lot_corners_constraint_set(self):
         lot_center = self.lot.center
         lot_corners = services.current_zone().lot.corners
-        routing_surface = routing.SurfaceIdentifier(services.current_zone().id, 0, routing.SURFACETYPE_WORLD)
+        routing_surface = routing.SurfaceIdentifier(
+            services.current_zone().id, 0, routing.SURFACETYPE_WORLD)
         constraint_list = []
         for corner in lot_corners:
             diff = lot_center - corner
             if diff.magnitude_squared() != 0:
-                towards_center_vec = sims4.math.vector_normalize(lot_center - corner)*0.1
+                towards_center_vec = sims4.math.vector_normalize(lot_center -
+                                                                 corner) * 0.1
             else:
                 towards_center_vec = sims4.math.Vector3.ZERO()
             new_corner = corner + towards_center_vec
-            constraint_list.append(interactions.constraints.Position(new_corner, routing_surface=routing_surface))
+            constraint_list.append(interactions.constraints.Position(
+                new_corner, routing_surface=routing_surface))
         return create_constraint_set(constraint_list)
 
     def validate_spawn_points(self):
@@ -484,22 +598,27 @@ class Zone:
         dest_handles = set()
         lot_center = self.lot.center
         lot_corners = self.lot.corners
-        routing_surface = routing.SurfaceIdentifier(self.id, 0, routing.SURFACETYPE_WORLD)
+        routing_surface = routing.SurfaceIdentifier(self.id, 0,
+                                                    routing.SURFACETYPE_WORLD)
         for corner in lot_corners:
             diff = lot_center - corner
             if diff.magnitude_squared() != 0:
-                towards_center_vec = sims4.math.vector_normalize(lot_center - corner)*0.1
+                towards_center_vec = sims4.math.vector_normalize(lot_center -
+                                                                 corner) * 0.1
             else:
                 towards_center_vec = sims4.math.Vector3.ZERO()
             new_corner = corner + towards_center_vec
-            location = routing.Location(new_corner, sims4.math.Quaternion.IDENTITY(), routing_surface)
+            location = routing.Location(
+                new_corner, sims4.math.Quaternion.IDENTITY(), routing_surface)
             dest_handles.add(routing.connectivity.Handle(location))
         for spawn_point in self.spawn_points_gen():
             spawn_point.reset_valid_slots()
             routing_context = routing.PathPlanContext()
-            routing_context.set_key_mask(routing.FOOTPRINT_KEY_ON_LOT | routing.FOOTPRINT_KEY_OFF_LOT)
+            routing_context.set_key_mask(routing.FOOTPRINT_KEY_ON_LOT |
+                                         routing.FOOTPRINT_KEY_OFF_LOT)
             if spawn_point.footprint_id is not None:
-                routing_context.ignore_footprint_contour(spawn_point.footprint_id)
+                routing_context.ignore_footprint_contour(
+                    spawn_point.footprint_id)
             spawn_point.validate_slots(dest_handles, routing_context)
 
     def _check_navmesh_updated_alarm_callback(self, *_):
@@ -516,7 +635,8 @@ class Zone:
     def on_build_buy_exit(self):
         self.is_in_build_buy = False
         self._add_expenditures_and_do_post_bb_fixup()
-        services.get_event_manager().process_events_for_household(test_events.TestEvent.OnExitBuildBuy, None)
+        services.get_event_manager().process_events_for_household(
+            test_events.TestEvent.OnExitBuildBuy, None)
 
     def set_to_fixup_on_build_buy_exit(self, obj):
         if self.objects_to_fixup_post_bb is None:
@@ -544,12 +664,13 @@ class Zone:
         gameplay_zone_data = zone_data_msg.gameplay_zone_data
         gameplay_zone_data.lot_owner_household_id_on_save = self.lot.owner_household_id
         gameplay_zone_data.venue_type_id_on_save = self.venue_service.venue.guid64 if self.venue_service.venue is not None else 0
-        gameplay_zone_data.active_household_id_on_save = services.active_household_id()
+        gameplay_zone_data.active_household_id_on_save = services.active_household_id(
+        )
         self.lot.save(gameplay_zone_data)
         if self.lot.front_door_id:
             zone_data_msg.front_door_id = self.lot.front_door_id
         num_spawn_points = len(self._spawner_data)
-        spawn_point_ids = [0]*num_spawn_points
+        spawn_point_ids = [0] * num_spawn_points
         for (spawn_point_id, spawn_point) in self._spawner_data.items():
             spawn_point_ids[spawn_point.spawn_point_index] = spawn_point_id
         zone_data_msg.ClearField('spawn_point_ids')
@@ -558,7 +679,8 @@ class Zone:
         object_list = serialization.ObjectList()
         zone_objects_message.zone_id = self.id
         persistence_service = services.get_persistence_service()
-        open_street_data = persistence_service.get_open_street_proto_buff(self.open_street_id)
+        open_street_data = persistence_service.get_open_street_proto_buff(
+            self.open_street_id)
         if open_street_data is not None:
             open_street_data.Clear()
             add_proto_to_persistence = False
@@ -567,27 +689,42 @@ class Zone:
             add_proto_to_persistence = True
         open_street_data.world_id = self.open_street_id
         open_street_data.nbh_id = self.neighborhood_id
-        open_street_data.sim_time_on_save = services.time_service().sim_timeline.now.absolute_ticks()
-        open_street_data.active_household_id_on_save = services.active_household_id()
+        open_street_data.sim_time_on_save = services.time_service(
+        ).sim_timeline.now.absolute_ticks()
+        open_street_data.active_household_id_on_save = services.active_household_id(
+        )
         open_street_data.active_zone_id_on_save = self.id
-        self.service_manager.save_all_services(persistence_service, persistence_error_types.ErrorCodes.ZONE_SERVICES_SAVE_FAILED, object_list=object_list, zone_data=zone_data_msg, open_street_data=open_street_data, save_slot_data=save_slot_data)
+        self.service_manager.save_all_services(
+            persistence_service,
+            persistence_error_types.ErrorCodes.ZONE_SERVICES_SAVE_FAILED,
+            object_list=object_list,
+            zone_data=zone_data_msg,
+            open_street_data=open_street_data,
+            save_slot_data=save_slot_data)
         zone_objects_message.objects = object_list
         if add_proto_to_persistence:
-            services.get_persistence_service().add_open_street_proto_buff(open_street_data)
-        persistence_module.run_persistence_operation(persistence_module.PersistenceOpType.kPersistenceOpSaveZoneObjects, zone_objects_message, 0, None)
+            services.get_persistence_service().add_open_street_proto_buff(
+                open_street_data)
+        persistence_module.run_persistence_operation(
+            persistence_module.PersistenceOpType.kPersistenceOpSaveZoneObjects,
+            zone_objects_message, 0, None)
 
     def load_zone(self):
         zone_data_proto = self._get_zone_proto()
         self.neighborhood_id = zone_data_proto.neighborhood_id
         self.open_street_id = zone_data_proto.world_id
         self.service_manager.load_all_services(zone_data=zone_data_proto)
-        self._first_visit_to_zone = not protocol_buffer_utils.has_field(zone_data_proto.gameplay_zone_data, 'venue_type_id_on_save')
-        open_street_data = services.get_persistence_service().get_open_street_proto_buff(self.open_street_id)
+        self._first_visit_to_zone = not protocol_buffer_utils.has_field(
+            zone_data_proto.gameplay_zone_data, 'venue_type_id_on_save')
+        open_street_data = services.get_persistence_service(
+        ).get_open_street_proto_buff(self.open_street_id)
         if open_street_data is not None:
-            self._time_of_last_open_street_save = DateAndTime(open_street_data.sim_time_on_save)
+            self._time_of_last_open_street_save = DateAndTime(
+                open_street_data.sim_time_on_save)
         spawn_points = {}
         if zone_data_proto.spawn_point_ids:
-            for (index, spawn_point_id) in enumerate(zone_data_proto.spawn_point_ids):
+            for (index,
+                 spawn_point_id) in enumerate(zone_data_proto.spawn_point_ids):
                 spawn_point = self._spawner_data[index]
                 spawn_point.spawn_point_id = spawn_point_id
                 spawn_points[spawn_point_id] = spawn_point
@@ -599,7 +736,9 @@ class Zone:
         self._spawner_data = spawn_points
         self.lot.load(zone_data_proto.gameplay_zone_data)
         for spawn_point in self._spawner_data.values():
-            while spawn_point.has_tag(SpawnPoint.ARRIVAL_SPAWN_POINT_TAG) and spawn_point.lot_id == self.lot.lot_id:
+            while spawn_point.has_tag(
+                    SpawnPoint.
+                    ARRIVAL_SPAWN_POINT_TAG) and spawn_point.lot_id == self.lot.lot_id:
                 self._active_lot_arrival_spawn_point = spawn_point
         return True
 
@@ -616,7 +755,8 @@ class Zone:
         if zone_data_proto is None or self.lot is None:
             return False
         gameplay_zone_data = zone_data_proto.gameplay_zone_data
-        if not protocol_buffer_utils.has_field(gameplay_zone_data, 'lot_owner_household_id_on_save'):
+        if not protocol_buffer_utils.has_field(
+                gameplay_zone_data, 'lot_owner_household_id_on_save'):
             return False
         return gameplay_zone_data.lot_owner_household_id_on_save != self.lot.owner_household_id
 
@@ -625,9 +765,11 @@ class Zone:
         if zone_data_proto is None:
             return False
         gameplay_zone_data = zone_data_proto.gameplay_zone_data
-        if not protocol_buffer_utils.has_field(gameplay_zone_data, 'active_household_id_on_save'):
+        if not protocol_buffer_utils.has_field(gameplay_zone_data,
+                                               'active_household_id_on_save'):
             return False
-        return gameplay_zone_data.active_household_id_on_save != services.active_household_id()
+        return gameplay_zone_data.active_household_id_on_save != services.active_household_id(
+        )
 
     def update_household_objects_ownership(self):
         zone_data_proto = self._get_zone_proto()
@@ -640,8 +782,12 @@ class Zone:
             self._set_zone_objects_household_owner_id(None)
         elif self.lot.owner_household_id == services.active_household_id():
             gameplay_zone_data = zone_data_proto.gameplay_zone_data
-            if not protocol_buffer_utils.has_field(gameplay_zone_data, 'active_household_id_on_save') or gameplay_zone_data.lot_owner_household_id_on_save != services.active_household_id():
-                self._set_zone_objects_household_owner_id(services.active_household_id())
+            if not protocol_buffer_utils.has_field(
+                    gameplay_zone_data,
+                    'active_household_id_on_save') or gameplay_zone_data.lot_owner_household_id_on_save != services.active_household_id(
+                    ):
+                self._set_zone_objects_household_owner_id(
+                    services.active_household_id())
 
     def _set_zone_objects_household_owner_id(self, household_id):
         for obj in services.object_manager(self.id).get_all():
@@ -656,12 +802,18 @@ class Zone:
         if zone_data_proto is None or self.venue_service.venue is None:
             return False
         gameplay_zone_data = zone_data_proto.gameplay_zone_data
-        if not protocol_buffer_utils.has_field(gameplay_zone_data, 'venue_type_id_on_save'):
+        if not protocol_buffer_utils.has_field(gameplay_zone_data,
+                                               'venue_type_id_on_save'):
             return False
         return False
 
     def should_restore_sis(self):
-        if services.game_clock_service().time_has_passed_in_world_since_zone_save() or (self.venue_type_changed_between_save_and_load() or (self.lot_owner_household_changed_between_save_and_load() or self.active_household_changed_between_save_and_load())) or self.is_first_visit_to_zone:
+        if services.game_clock_service(
+        ).time_has_passed_in_world_since_zone_save() or (
+                self.venue_type_changed_between_save_and_load() or
+            (self.lot_owner_household_changed_between_save_and_load() or
+             self.active_household_changed_between_save_and_load(
+             ))) or self.is_first_visit_to_zone:
             return False
         return True
 
@@ -684,4 +836,3 @@ class Zone:
         if time_elapsed > TimeSpan.ZERO:
             return True
         return False
-

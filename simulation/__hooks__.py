@@ -6,6 +6,7 @@ try:
 except:
     __enable_gc_callback = False
 
+
 def system_init(gameplay):
     import sims4.importer
     sims4.importer.enable()
@@ -18,9 +19,9 @@ def system_init(gameplay):
     if __enable_gc_callback:
         gc.callbacks.append(_profile.notify_gc_function)
 
+
 def system_shutdown():
     global RELOADER_ENABLED
     import sims4.importer
     sims4.importer.disable()
     RELOADER_ENABLED = False
-

@@ -10,7 +10,14 @@ __all__ = ['Meta']
 __unittest__ = ['test.enum_test']
 logger = sims4.log.Logger('Enum')
 
-def _make_base(base, flags=False, enum_math=True, locked=False, export=True, display_sorted=False, partitioned=False):
+
+def _make_base(base,
+               flags=False,
+               enum_math=True,
+               locked=False,
+               export=True,
+               display_sorted=False,
+               partitioned=False):
     use_flags = flags
     del flags
     use_locked = locked
@@ -162,12 +169,14 @@ def _make_base(base, flags=False, enum_math=True, locked=False, export=True, dis
             return '%s.%s' % (type(self).__name__, self.name)
 
         def __repr__(self):
-            return '<%s.%s = %s>' % (type(self).__name__, self.name, super().__repr__())
+            return '<%s.%s = %s>' % (type(self).__name__, self.name,
+                                     super().__repr__())
 
         def __reduce__(self):
-            return (type(self), (int(self),))
+            return (type(self), (int(self), ))
 
     return Enum
+
 
 class Metaclass(type):
     __qualname__ = 'Metaclass'
@@ -194,18 +203,21 @@ class Metaclass(type):
 
     def __setattr__(cls, name, value):
         if not cls._mutable:
-            raise AttributeError("Can't modify enum {0}".format(cls.__qualname__))
+            raise AttributeError("Can't modify enum {0}".format(
+                cls.__qualname__))
         super().__setattr__(name, value)
 
     def __delattr__(cls, name):
         if not cls._mutable:
-            raise AttributeError("Can't modify enum {0}".format(cls.__qualname__))
+            raise AttributeError("Can't modify enum {0}".format(
+                cls.__qualname__))
         super().__delattr__(name)
 
     __getitem__ = type.__getattribute__
 
     def __repr__(cls):
-        return '<enum {0}: {1}>'.format(cls.__name__, cls.underlying_type.__name__)
+        return '<enum {0}: {1}>'.format(cls.__name__,
+                                        cls.underlying_type.__name__)
 
     def __len__(cls):
         return len(cls._items)
@@ -233,7 +245,16 @@ class Metaclass(type):
     def __init__(self, *args, flags=False, locked=False, **kwargs):
         super().__init__(*args)
 
-    def __new__(meta, classname, bases, class_dict, flags=False, locked=False, export=True, display_sorted=False, enum_math=True, partitioned=False):
+    def __new__(meta,
+                classname,
+                bases,
+                class_dict,
+                flags=False,
+                locked=False,
+                export=True,
+                display_sorted=False,
+                enum_math=True,
+                partitioned=False):
         values = {}
         names = collections.OrderedDict()
         new_dict = {}
@@ -253,9 +274,12 @@ class Metaclass(type):
                     base_type = base_type.__base__
                 base_type = base_type.__base__
         if issubclass(base_type, str):
-            raise TypeError("'{}' enums are not supported".format(base_type.__name__))
+            raise TypeError("'{}' enums are not supported".format(
+                base_type.__name__))
         RESTRICTED = set(('__module__', '__doc__'))
-        KEYWORDS = set(('values', 'names', '_items', '_to_name', '_underlying_type', '__slots__', '_mutable', '__reload_context__'))
+        KEYWORDS = set(
+            ('values', 'names', '_items', '_to_name', '_underlying_type',
+             '__slots__', '_mutable', '__reload_context__'))
         prev_value = None
         for (name, value) in class_dict.items():
             if value is Ellipsis:
@@ -297,8 +321,14 @@ class Metaclass(type):
                 type.__setattr__(newobj, '_mutable', newobj_value)
 
         new_dict['__reload_context__'] = make_mutable_for_reload
-        enum_base = _make_base(base_type, flags=flags, locked=locked, export=export, display_sorted=display_sorted, enum_math=enum_math, partitioned=partitioned)
-        new_bases = (enum_base,) + bases[1:]
+        enum_base = _make_base(base_type,
+                               flags=flags,
+                               locked=locked,
+                               export=export,
+                               display_sorted=display_sorted,
+                               enum_math=enum_math,
+                               partitioned=partitioned)
+        new_bases = (enum_base, ) + bases[1:]
         enum_type = type.__new__(meta, classname, new_bases, dict(new_dict))
         for (name, value) in class_dict.items():
             while name not in KEYWORDS:
@@ -309,15 +339,20 @@ class Metaclass(type):
         enum_type._mutable = False
         return enum_type
 
+
 class Int(metaclass=Metaclass):
     __qualname__ = 'Int'
 
+
 class IntFlags(metaclass=Metaclass, flags=True):
     __qualname__ = 'IntFlags'
+
 
 def warn_about_overlapping_enum_values(*enum_types):
     for (a, b) in itertools.combinations(enum_types, 2):
         overlapping_values = a.values & b.values
         while overlapping_values:
-            logger.error('{} and {} have one or more overlapping values, this is dangerous so it is disallowed: {}', a.__name__, b.__name__, ', '.join('{} == {}'.format(a(v), b(v)) for v in overlapping_values))
-
+            logger.error(
+                '{} and {} have one or more overlapping values, this is dangerous so it is disallowed: {}',
+                a.__name__, b.__name__, ', '.join('{} == {}'.format(
+                    a(v), b(v)) for v in overlapping_values))

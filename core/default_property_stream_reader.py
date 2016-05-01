@@ -1,5 +1,6 @@
 import sims4
 
+
 class DefaultPropertyStreamReader:
     __qualname__ = 'DefaultPropertyStreamReader'
 
@@ -152,4 +153,3 @@ class DefaultPropertyStreamReader:
         except KeyError:
             value = default
         return value
-

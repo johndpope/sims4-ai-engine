@@ -22,6 +22,7 @@ TELEMETRY_FIELD_PLAYER_COUNT = 'plyc'
 zone_telemetry_writer = sims4.telemetry.TelemetryWriter(TELEMETRY_GROUP_ZONE)
 logger = sims4.log.Logger('ZoneSpinUpService')
 
+
 class ZoneSpinUpStatus(enum.Int, export=False):
     __qualname__ = 'ZoneSpinUpStatus'
     CREATED = 0
@@ -31,10 +32,12 @@ class ZoneSpinUpStatus(enum.Int, export=False):
     COMPLETED = 4
     ERRORED = 5
 
+
 class _ZoneSpinUpStateResult(enum.Int, export=False):
     __qualname__ = '_ZoneSpinUpStateResult'
     WAITING = 0
     DONE = 1
+
 
 class _ZoneSpinUpState:
     __qualname__ = '_ZoneSpinUpState'
@@ -46,14 +49,18 @@ class _ZoneSpinUpState:
         return ErrorCodes.GENERIC_ERROR
 
     def on_enter(self):
-        logger.debug('{}.on_enter at {}', self.__class__.__name__, services.time_service().sim_now)
+        logger.debug('{}.on_enter at {}', self.__class__.__name__,
+                     services.time_service().sim_now)
         return _ZoneSpinUpStateResult.DONE
 
     def on_update(self):
         return _ZoneSpinUpStateResult.DONE
 
     def on_exit(self):
-        logger.debug('{}.on_exit at {}', self.__class__.__name__, services.time_service().sim_now, services.game_clock_service()._loading_monotonic_ticks)
+        logger.debug('{}.on_exit at {}', self.__class__.__name__,
+                     services.time_service().sim_now,
+                     services.game_clock_service()._loading_monotonic_ticks)
+
 
 class _StopCaching(_ZoneSpinUpState):
     __qualname__ = '_StopCaching'
@@ -65,6 +72,7 @@ class _StopCaching(_ZoneSpinUpState):
         super().on_enter()
         caches.skip_cache = True
         return _ZoneSpinUpStateResult.DONE
+
 
 class _StartCaching(_ZoneSpinUpState):
     __qualname__ = '_StartCaching'
@@ -78,6 +86,7 @@ class _StartCaching(_ZoneSpinUpState):
         caches.clear_all_caches(force=True)
         return _ZoneSpinUpStateResult.DONE
 
+
 class _InitializeFrontDoor(_ZoneSpinUpState):
     __qualname__ = '_InitializeFrontDoor'
 
@@ -89,6 +98,7 @@ class _InitializeFrontDoor(_ZoneSpinUpState):
         current_zone = services.current_zone()
         current_zone.load_zone_front_door()
         return _ZoneSpinUpStateResult.DONE
+
 
 class _LoadHouseholdsAndSimInfosState(_ZoneSpinUpState):
     __qualname__ = '_LoadHouseholdsAndSimInfosState'
@@ -106,16 +116,20 @@ class _LoadHouseholdsAndSimInfosState(_ZoneSpinUpState):
         client = zone_spin_up_service._client_connect_data.client
         services.account_service().on_load_options(client)
         for sim_info in household.sim_info_gen():
-            client.add_selectable_sim_info(sim_info, send_relationship_update=False)
+            client.add_selectable_sim_info(sim_info,
+                                           send_relationship_update=False)
         zone.on_households_and_sim_infos_loaded()
         zone.service_manager.on_all_households_and_sim_infos_loaded(client)
         services.ui_dialog_service().send_dialog_options_to_client()
         client.clean_and_send_remaining_relationship_info()
         services.current_zone().lot.send_lot_display_info()
-        for obj in itertools.chain(services.object_manager().values(), services.inventory_manager().values()):
+        for obj in itertools.chain(services.object_manager().values(),
+                                   services.inventory_manager().values()):
             while obj.live_drag_component is not None:
-                obj.live_drag_component.set_active_household_live_drag_permission()
+                obj.live_drag_component.set_active_household_live_drag_permission(
+                )
         return _ZoneSpinUpStateResult.DONE
+
 
 class _SetObjectOwnershipState(_ZoneSpinUpState):
     __qualname__ = '_SetObjectOwnershipState'
@@ -129,6 +143,7 @@ class _SetObjectOwnershipState(_ZoneSpinUpState):
         current_zone.update_household_objects_ownership()
         return _ZoneSpinUpStateResult.DONE
 
+
 class _CleanupLotState(_ZoneSpinUpState):
     __qualname__ = '_CleanupLotState'
 
@@ -139,12 +154,14 @@ class _CleanupLotState(_ZoneSpinUpState):
         destroy_unentitled_craftables()
         GlobalLotTuningAndCleanup.cleanup_objects(lot=zone.lot)
         zone.service_manager.on_cleanup_zone_objects(client)
-        services.current_zone().posture_graph_service.build_during_zone_spin_up()
+        services.current_zone(
+        ).posture_graph_service.build_during_zone_spin_up()
         pythonutils.try_highwater_gc()
         return _ZoneSpinUpStateResult.DONE
 
     def exception_error_code(self):
         return ErrorCodes.CLEANUP_STATE_FAILED
+
 
 class _SpawnSimsState(_ZoneSpinUpState):
     __qualname__ = '_SpawnSimsState'
@@ -159,6 +176,7 @@ class _SpawnSimsState(_ZoneSpinUpState):
         services.sim_info_manager().on_spawn_sims_for_zone_spin_up(client)
         return _ZoneSpinUpStateResult.DONE
 
+
 class _WaitForSimsReadyState(_ZoneSpinUpState):
     __qualname__ = '_WaitForSimsReadyState'
 
@@ -170,10 +188,12 @@ class _WaitForSimsReadyState(_ZoneSpinUpState):
         return _ZoneSpinUpStateResult.WAITING
 
     def on_update(self):
-        for sim in services.sim_info_manager().instanced_sims_gen(allow_hidden_flags=ALL_HIDDEN_REASONS):
+        for sim in services.sim_info_manager().instanced_sims_gen(
+                allow_hidden_flags=ALL_HIDDEN_REASONS):
             while not sim.is_simulating:
                 return _ZoneSpinUpStateResult.WAITING
         return _ZoneSpinUpStateResult.DONE
+
 
 class _WaitForNavmeshState(_ZoneSpinUpState):
     __qualname__ = '_WaitForNavmeshState'
@@ -201,6 +221,7 @@ class _WaitForNavmeshState(_ZoneSpinUpState):
             return _ZoneSpinUpStateResult.WAITING
         return _ZoneSpinUpStateResult.DONE
 
+
 class _RestoreSIState(_ZoneSpinUpState):
     __qualname__ = '_RestoreSIState'
 
@@ -211,11 +232,13 @@ class _RestoreSIState(_ZoneSpinUpState):
         super().on_enter()
         zone = services.current_zone()
         if not zone.should_restore_sis():
-            logger.debug('NOT restoring interactions in zone spin up', owner='sscholl')
+            logger.debug('NOT restoring interactions in zone spin up',
+                         owner='sscholl')
             return _ZoneSpinUpStateResult.DONE
         logger.debug('Restoring interactions in zone spin up', owner='sscholl')
         services.sim_info_manager().restore_sim_si_state()
         return _ZoneSpinUpStateResult.DONE
+
 
 class _RestoreCareerState(_ZoneSpinUpState):
     __qualname__ = '_RestoreCareerState'
@@ -228,6 +251,7 @@ class _RestoreCareerState(_ZoneSpinUpState):
         services.get_career_service().restore_career_state()
         return _ZoneSpinUpStateResult.DONE
 
+
 class _SituationCommonState(_ZoneSpinUpState):
     __qualname__ = '_SituationCommonState'
 
@@ -238,9 +262,11 @@ class _SituationCommonState(_ZoneSpinUpState):
         super().on_enter()
         situation_manager = services.get_zone_situation_manager()
         situation_manager.create_situations_during_zone_spin_up()
-        services.current_zone().venue_service.initialize_venue_background_schedule()
+        services.current_zone(
+        ).venue_service.initialize_venue_background_schedule()
         situation_manager.on_all_situations_created_during_zone_spin_up()
         return _ZoneSpinUpStateResult.DONE
+
 
 class _WaitForBouncer(_ZoneSpinUpState):
     __qualname__ = '_WaitForBouncer'
@@ -261,6 +287,7 @@ class _WaitForBouncer(_ZoneSpinUpState):
             return _ZoneSpinUpStateResult.WAITING
         return _ZoneSpinUpStateResult.DONE
 
+
 class _PrerollAutonomyState(_ZoneSpinUpState):
     __qualname__ = '_PrerollAutonomyState'
 
@@ -271,13 +298,16 @@ class _PrerollAutonomyState(_ZoneSpinUpState):
         super().on_enter()
         caches.skip_cache = False
         first_visit_to_zone = services.current_zone().is_first_visit_to_zone
-        if services.game_clock_service().time_has_passed_in_world_since_zone_save() or first_visit_to_zone:
-            services.sim_info_manager().run_preroll_autonomy(first_time_load_zone=first_visit_to_zone)
+        if services.game_clock_service(
+        ).time_has_passed_in_world_since_zone_save() or first_visit_to_zone:
+            services.sim_info_manager().run_preroll_autonomy(
+                first_time_load_zone=first_visit_to_zone)
         return _ZoneSpinUpStateResult.DONE
 
     def on_exit(self):
         super().on_exit()
         caches.skip_cache = True
+
 
 class _AwayActionsState(_ZoneSpinUpState):
     __qualname__ = '_AwayActionsState'
@@ -297,7 +327,8 @@ class _AwayActionsState(_ZoneSpinUpState):
         for sim_info in services.sim_info_manager().values():
             if sim_info.is_selectable:
                 if sim_info.zone_id not in loaded_zones:
-                    zone_manager.load_uninstantiated_zone_data(sim_info.zone_id)
+                    zone_manager.load_uninstantiated_zone_data(
+                        sim_info.zone_id)
                     loaded_zones.add(sim_info.zone_id)
                 sim_info.away_action_tracker.start()
             else:
@@ -306,6 +337,7 @@ class _AwayActionsState(_ZoneSpinUpState):
         if home_zone_id not in loaded_zones:
             zone_manager.load_uninstantiated_zone_data(home_zone_id)
         return _ZoneSpinUpStateResult.DONE
+
 
 class _PushSimsToGoHomeState(_ZoneSpinUpState):
     __qualname__ = '_PushSimsToGoHomeState'
@@ -318,6 +350,7 @@ class _PushSimsToGoHomeState(_ZoneSpinUpState):
         if sim_info_manager:
             sim_info_manager.push_sims_to_go_home()
         return _ZoneSpinUpStateResult.DONE
+
 
 class _FinalizeObjectsState(_ZoneSpinUpState):
     __qualname__ = '_FinalizeObjectsState'
@@ -333,6 +366,7 @@ class _FinalizeObjectsState(_ZoneSpinUpState):
             script_object.finalize(active_household_id=active_household_id)
         return _ZoneSpinUpStateResult.DONE
 
+
 class _SetActiveSimState(_ZoneSpinUpState):
     __qualname__ = '_SetActiveSimState'
 
@@ -345,10 +379,12 @@ class _SetActiveSimState(_ZoneSpinUpState):
         zone_spin_up_service = zone.zone_spin_up_service
         active_sim_id = zone_spin_up_service._client_connect_data.active_sim_id
         client = zone_spin_up_service._client_connect_data.client
-        if (not active_sim_id or not client.set_active_sim_by_id(active_sim_id)) and client.active_sim is None:
+        if (not active_sim_id or not client.set_active_sim_by_id(active_sim_id)
+            ) and client.active_sim is None:
             client.set_next_sim()
         client.resend_active_sim_info()
         return _ZoneSpinUpStateResult.DONE
+
 
 class _StartupCommandsState(_ZoneSpinUpState):
     __qualname__ = '_StartupCommandsState'
@@ -373,6 +409,7 @@ class _StartupCommandsState(_ZoneSpinUpState):
         sims4.command_script.run_script(startup_commands_file, client_id)
         return _ZoneSpinUpStateResult.DONE
 
+
 class _EditModeSequenceCompleteState(_ZoneSpinUpState):
     __qualname__ = '_EditModeSequenceCompleteState'
 
@@ -389,6 +426,7 @@ class _EditModeSequenceCompleteState(_ZoneSpinUpState):
         zone.game_clock.restore_saved_clock_speed()
         return _ZoneSpinUpStateResult.DONE
 
+
 class _FinalPlayableState(_ZoneSpinUpState):
     __qualname__ = '_FinalPlayableState'
 
@@ -403,15 +441,22 @@ class _FinalPlayableState(_ZoneSpinUpState):
         zone.ambient_service.begin_walkbys()
         client = zone_spin_up_service._client_connect_data.client
         if client is not None:
-            with telemetry_helper.begin_hook(zone_telemetry_writer, TELEMETRY_HOOK_ZONE_LOAD, household=client.household) as hook:
-                (player_sims, npc_sims) = services.sim_info_manager().get_player_npc_sim_count()
+            with telemetry_helper.begin_hook(
+                    zone_telemetry_writer,
+                    TELEMETRY_HOOK_ZONE_LOAD,
+                    household=client.household) as hook:
+                (player_sims, npc_sims) = services.sim_info_manager(
+                ).get_player_npc_sim_count()
                 hook.write_int(TELEMETRY_FIELD_PLAYER_COUNT, player_sims)
                 hook.write_int(TELEMETRY_FIELD_NPC_COUNT, npc_sims)
             from event_testing import test_events
             for sim_info in client.selectable_sims:
-                services.get_event_manager().process_event(test_events.TestEvent.LoadingScreenLifted, sim_info=sim_info)
+                services.get_event_manager().process_event(
+                    test_events.TestEvent.LoadingScreenLifted,
+                    sim_info=sim_info)
         client.household.telemetry_tracker.initialize_alarms()
         return _ZoneSpinUpStateResult.DONE
+
 
 class _HittingTheirMarksState(_ZoneSpinUpState):
     __qualname__ = '_HittingTheirMarksState'
@@ -436,7 +481,10 @@ class _HittingTheirMarksState(_ZoneSpinUpState):
         services.game_clock_service().advance_for_hitting_their_marks()
         return _ZoneSpinUpStateResult.WAITING
 
-ClientConnectData = collections.namedtuple('ClientConnectData', ['household_id', 'client', 'active_sim_id'])
+
+ClientConnectData = collections.namedtuple(
+    'ClientConnectData', ['household_id', 'client', 'active_sim_id'])
+
 
 class ZoneSpinUpService(sims4.service_manager.Service):
     __qualname__ = 'ZoneSpinUpService'
@@ -450,19 +498,32 @@ class ZoneSpinUpService(sims4.service_manager.Service):
 
     @property
     def _edit_mode_state_sequence(self):
-        return (_EditModeSequenceCompleteState,)
+        return (_EditModeSequenceCompleteState, )
 
     @property
     def _playable_sequence(self):
-        return (_StopCaching, _LoadHouseholdsAndSimInfosState, _SetObjectOwnershipState, _SpawnSimsState, _WaitForSimsReadyState, _CleanupLotState, _AwayActionsState, _RestoreSIState, _SituationCommonState, _WaitForBouncer, _WaitForSimsReadyState, _FinalizeObjectsState, _RestoreCareerState, _WaitForNavmeshState, _InitializeFrontDoor, _PrerollAutonomyState, _PushSimsToGoHomeState, _SetActiveSimState, _StartupCommandsState, _StartCaching, _FinalPlayableState)
+        return (
+            _StopCaching, _LoadHouseholdsAndSimInfosState,
+            _SetObjectOwnershipState, _SpawnSimsState, _WaitForSimsReadyState,
+            _CleanupLotState, _AwayActionsState, _RestoreSIState,
+            _SituationCommonState, _WaitForBouncer, _WaitForSimsReadyState,
+            _FinalizeObjectsState, _RestoreCareerState, _WaitForNavmeshState,
+            _InitializeFrontDoor, _PrerollAutonomyState,
+            _PushSimsToGoHomeState, _SetActiveSimState, _StartupCommandsState,
+            _StartCaching, _FinalPlayableState)
 
     @property
     def _hitting_their_marks_state_sequence(self):
-        return (_HittingTheirMarksState,)
+        return (_HittingTheirMarksState, )
 
-    def set_household_id_and_client_and_active_sim_id(self, household_id, client, active_sim_id):
-        logger.assert_raise(self._status == ZoneSpinUpStatus.CREATED, 'Attempting to initialize the zone_spin_up_process more than once.', owner='sscholl')
-        self._client_connect_data = ClientConnectData(household_id, client, active_sim_id)
+    def set_household_id_and_client_and_active_sim_id(self, household_id,
+                                                      client, active_sim_id):
+        logger.assert_raise(
+            self._status == ZoneSpinUpStatus.CREATED,
+            'Attempting to initialize the zone_spin_up_process more than once.',
+            owner='sscholl')
+        self._client_connect_data = ClientConnectData(household_id, client,
+                                                      active_sim_id)
         self._status = ZoneSpinUpStatus.INITIALIZED
 
     def stop(self):
@@ -477,7 +538,10 @@ class ZoneSpinUpService(sims4.service_manager.Service):
         return self._status == ZoneSpinUpStatus.ERRORED
 
     def _start_sequence(self, sequence):
-        logger.assert_raise(self._status >= ZoneSpinUpStatus.INITIALIZED, 'Attempting to start the zone_spin_up_process when not initialized.', owner='sscholl')
+        logger.assert_raise(
+            self._status >= ZoneSpinUpStatus.INITIALIZED,
+            'Attempting to start the zone_spin_up_process when not initialized.',
+            owner='sscholl')
         self._current_state = None
         self._cur_state_index = -1
         self._status = ZoneSpinUpStatus.SEQUENCED
@@ -493,7 +557,11 @@ class ZoneSpinUpService(sims4.service_manager.Service):
         self._start_sequence(self._hitting_their_marks_state_sequence)
 
     def update(self):
-        logger.assert_raise(self._status != ZoneSpinUpStatus.CREATED and self._status != ZoneSpinUpStatus.INITIALIZED, 'Attempting to update the zone_spin_up_process that has not been initialized.', owner='sscholl')
+        logger.assert_raise(
+            self._status != ZoneSpinUpStatus.CREATED and
+            self._status != ZoneSpinUpStatus.INITIALIZED,
+            'Attempting to update the zone_spin_up_process that has not been initialized.',
+            owner='sscholl')
         if self._status >= ZoneSpinUpStatus.COMPLETED:
             return
         if self._status == ZoneSpinUpStatus.SEQUENCED:
@@ -509,18 +577,23 @@ class ZoneSpinUpService(sims4.service_manager.Service):
                     self._status = ZoneSpinUpStatus.COMPLETED
                     break
                 else:
-                    self._current_state = self._state_sequence[self._cur_state_index]()
+                    self._current_state = self._state_sequence[
+                        self._cur_state_index]()
                     state_result = self._current_state.on_enter()
                     while state_result == _ZoneSpinUpStateResult.DONE:
                         self._current_state.on_exit()
                         continue
         except Exception as e:
             self._status = ZoneSpinUpStatus.ERRORED
-            dialog = services.persistence_service.PersistenceTuning.LOAD_ERROR_REQUEST_RESTART(services.current_zone())
+            dialog = services.persistence_service.PersistenceTuning.LOAD_ERROR_REQUEST_RESTART(
+                services.current_zone())
             if dialog is not None:
-                error_string = generate_exception_code(self._current_state.exception_error_code(), e)
-                dialog.show_dialog(additional_tokens=(error_string,))
-            logger.exception('Exception raised while processing zone spin up sequence: {}', e)
+                error_string = generate_exception_code(
+                    self._current_state.exception_error_code(), e)
+                dialog.show_dialog(additional_tokens=(error_string, ))
+            logger.exception(
+                'Exception raised while processing zone spin up sequence: {}',
+                e)
 
     def do_clean_up(self):
         self._current_state = None
@@ -530,4 +603,3 @@ class ZoneSpinUpService(sims4.service_manager.Service):
     def process_zone_loaded(self):
         services.lot_spawner_service_instance().setup_spawner()
         services.current_zone().supress_goals_for_spawn_points()
-

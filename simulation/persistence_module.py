@@ -6,9 +6,11 @@ except ImportError as err:
         __qualname__ = '_persistence_module'
 
         @staticmethod
-        def run_persistence_operation(persistence_op_type, protocol_buffer, save_slot_id, callback):
+        def run_persistence_operation(persistence_op_type, protocol_buffer,
+                                      save_slot_id, callback):
             callback(save_slot_id, False)
             return False
+
 
 class PersistenceOpType:
     __qualname__ = 'PersistenceOpType'
@@ -20,5 +22,6 @@ class PersistenceOpType:
     kPersistenceOpSaveGameplayGlobalData = 5
     kPersistenceOpLoadGameplayGlobalData = 6
     kPersistenceOpSaveHousehold = 1000
+
 
 run_persistence_operation = _persistence_module.run_persistence_operation

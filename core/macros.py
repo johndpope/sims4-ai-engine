@@ -12,12 +12,14 @@ __all__ = ['macro', 'load_module']
 __unittest__ = ['test.macros_test']
 MACRO_SYMBOL = 'macro'
 
+
 def macro(obj):
     if isinstance(obj, types.FunctionType):
         return obj
     if isinstance(obj, type):
         return obj
     raise RuntimeError('Macros can only be applied to functions and classes.')
+
 
 def _expand_attribute(node):
     if isinstance(node, ast.Name):
@@ -30,6 +32,7 @@ def _expand_attribute(node):
         return 'str'
     return '<other>'
 
+
 def _is_macro(node, macros):
     if node.decorator_list and len(node.decorator_list) == 1:
         name = node.decorator_list[0]
@@ -40,6 +43,7 @@ def _is_macro(node, macros):
         return symbol == MACRO_SYMBOL
     return False
 
+
 def _get_body(node):
     if len(node.body) >= 1:
         doc = node.body[0]
@@ -47,23 +51,30 @@ def _get_body(node):
             return (doc.value.s, node.body[1:])
     return (None, node.body)
 
+
 def _ast_dump_pp(tree, annotate_fields=True, include_attributes=False):
     if isinstance(tree, list):
-        result = '[{}]'.format(', '.join([_ast_dump_pp(node, annotate_fields=annotate_fields, include_attributes=include_attributes) for node in tree]))
+        result = '[{}]'.format(', '.join([_ast_dump_pp(
+            node,
+            annotate_fields=annotate_fields,
+            include_attributes=include_attributes) for node in tree]))
         return result
-    s = ast.dump(tree, annotate_fields=annotate_fields, include_attributes=include_attributes)
+    s = ast.dump(tree,
+                 annotate_fields=annotate_fields,
+                 include_attributes=include_attributes)
     result = ''
     indent = 0
     for c in s:
         result += c
         if c in '([':
             indent = indent + 1
-            result += '\n' + '    '*indent
+            result += '\n' + '    ' * indent
         else:
             while c in ')]':
                 indent = indent - 1
-                result += '\n' + '    '*indent
+                result += '\n' + '    ' * indent
     return result
+
 
 def _fix_all_locations(node, lineno, col_offset):
     if 'lineno' in node._attributes:
@@ -74,16 +85,20 @@ def _fix_all_locations(node, lineno, col_offset):
         _fix_all_locations(child, lineno, col_offset)
     return node
 
+
 def _get_parameter_mapping(macro_name, parameters, call, skip=()):
     for (i, expected) in enumerate(skip):
         while parameters.args[i].arg != expected:
-            raise TypeError("Expected argument '{}' rather than '{}'".format(expected, parameters.args[i].arg))
+            raise TypeError("Expected argument '{}' rather than '{}'".format(
+                expected, parameters.args[i].arg))
     num_skip = len(skip)
     num_defaults = len(parameters.defaults)
     allowed = {param.arg for param in parameters.args[num_skip:]}
     required = {param.arg for param in parameters.args[num_skip:-num_defaults]}
     given = set()
-    mapping = {name.arg: value for (name, value) in zip(parameters.args[-num_defaults:], parameters.defaults)}
+    mapping = {name.arg: value
+               for (name, value) in zip(parameters.args[-num_defaults:],
+                                        parameters.defaults)}
     for (kw, value) in zip(parameters.kwonlyargs, parameters.kw_defaults):
         if value is not None:
             mapping[kw.arg] = value
@@ -94,19 +109,27 @@ def _get_parameter_mapping(macro_name, parameters, call, skip=()):
         param = parameters.args[i]
         _add_arg(param.arg, arg, macro_name, mapping, given, required, allowed)
     for kwarg in call.keywords:
-        _add_arg(kwarg.arg, kwarg.value, macro_name, mapping, given, required, allowed)
+        _add_arg(kwarg.arg, kwarg.value, macro_name, mapping, given, required,
+                 allowed)
     if len(required) > 0:
-        raise TypeError("Macro '{}' missing required arguments: {}".format(macro_name, required))
+        raise TypeError("Macro '{}' missing required arguments: {}".format(
+            macro_name, required))
     return mapping
+
 
 def _add_arg(name, value, macro_name, mapping, given, required, allowed):
     if name in given:
-        raise TypeError("Macro '{}' got multiple values for argument '{}'".format(macro_name, name))
+        raise TypeError(
+            "Macro '{}' got multiple values for argument '{}'".format(
+                macro_name, name))
     if name not in allowed:
-        raise TypeError("Macro '{}' got an unexpected keyword argument '{}'".format(macro_name, name))
+        raise TypeError(
+            "Macro '{}' got an unexpected keyword argument '{}'".format(
+                macro_name, name))
     given.add(name)
     required.discard(name)
     mapping[name] = value
+
 
 class MacroBase:
     __qualname__ = 'MacroBase'
@@ -125,8 +148,10 @@ class MacroBase:
 
     def __str__(self):
         if self.__doc__ is not None:
-            return '<{}(\'{}\', """{}""")>'.format(type(self).__name__, self.full_name(), self.__doc__)
+            return '<{}(\'{}\', """{}""")>'.format(
+                type(self).__name__, self.full_name(), self.__doc__)
         return "<{}('{}')>".format(type(self).__name__, self.full_name())
+
 
 class FunctionMacro(MacroBase):
     __qualname__ = 'FunctionMacro'
@@ -147,9 +172,14 @@ class FunctionMacro(MacroBase):
 
     def apply(self, call, statement_context):
         if not statement_context and not self.is_expr:
-            raise RuntimeError('Attempting to apply non-expression macro {} in an expression context'.format(self.full_name()))
+            raise RuntimeError(
+                'Attempting to apply non-expression macro {} in an expression context'.format(
+                    self.full_name()))
         mapping = self.get_base_mapping()
-        argument_mapping = _get_parameter_mapping(self.name, self.node.args, call, skip=self.get_skip_args())
+        argument_mapping = _get_parameter_mapping(self.name,
+                                                  self.node.args,
+                                                  call,
+                                                  skip=self.get_skip_args())
         mapping.update(argument_mapping)
         new_tree = copy.deepcopy(self.body)
         transformer = MacroTransformer(mapping)
@@ -166,6 +196,7 @@ class FunctionMacro(MacroBase):
             result = result.body
         return result
 
+
 class InstanceMacro(FunctionMacro):
     __qualname__ = 'InstanceMacro'
 
@@ -181,7 +212,8 @@ class InstanceMacro(FunctionMacro):
         return dict(self.base_mapping)
 
     def get_skip_args(self):
-        return ('self',)
+        return ('self', )
+
 
 class ClassMacro(MacroBase):
     __qualname__ = 'ClassMacro'
@@ -191,41 +223,62 @@ class ClassMacro(MacroBase):
         self._macros = {}
         for child in self.body:
             if isinstance(child, ast.FunctionDef):
-                self._macros[child.name] = FunctionMacro(child, self.from_module)
+                self._macros[child.name] = FunctionMacro(child,
+                                                         self.from_module)
             else:
-                raise RuntimeError('Class macro {} contains non-function statement {}'.format(node.name, child))
+                raise RuntimeError(
+                    'Class macro {} contains non-function statement {}'.format(
+                        node.name, child))
         if '__init__' not in self._macros:
-            raise RuntimeError('Class macro {} does not have an __init__ method'.format(node.name))
+            raise RuntimeError(
+                'Class macro {} does not have an __init__ method'.format(
+                    node.name))
         self._init = self._macros.pop('__init__')
 
     def get_init_mapping(self, node):
         init_args = self._init.node.args.args
-        argument_mapping = _get_parameter_mapping(self.name, self._init.node.args, node.value, skip=('self',))
+        argument_mapping = _get_parameter_mapping(self.name,
+                                                  self._init.node.args,
+                                                  node.value,
+                                                  skip=('self', ))
         mapping = {}
         for statement in self._init.body:
             if isinstance(statement, ast.Pass):
                 pass
             if not isinstance(statement, ast.Assign):
-                raise TypeError('Class macro __init__ must only contain assignments, not {}'.format(type(statement)))
+                raise TypeError(
+                    'Class macro __init__ must only contain assignments, not {}'.format(
+                        type(statement)))
             if len(statement.targets) != 1:
-                raise TypeError('Class macro __init__ assignments may only have one target, not {}'.format(len(statement.targets)))
+                raise TypeError(
+                    'Class macro __init__ assignments may only have one target, not {}'.format(
+                        len(statement.targets)))
             target = statement.targets[0]
-            if not isinstance(target, ast.Attribute) or not isinstance(target.value, ast.Name) or target.value.id != 'self':
-                raise TypeError('Class macro __init__ body may only assign to self')
+            if not isinstance(target, ast.Attribute) or not isinstance(
+                    target.value, ast.Name) or target.value.id != 'self':
+                raise TypeError(
+                    'Class macro __init__ body may only assign to self')
             dest = '{}.{}'.format(target.value.id, target.attr)
             if not isinstance(statement.value, ast.Name):
-                raise TypeError('Class macro __init__ body may only assign from arguments')
+                raise TypeError(
+                    'Class macro __init__ body may only assign from arguments')
             source = statement.value.id
             if source not in argument_mapping:
-                raise TypeError("Class macro __init__ assignment source '{}' not found in arguments".format(source))
+                raise TypeError(
+                    "Class macro __init__ assignment source '{}' not found in arguments".format(
+                        source))
             mapping[dest] = argument_mapping[source]
         return mapping
 
     def instantiate(self, node, from_module):
         name_str = _expand_attribute(node.targets[0])
         mapping = self.get_init_mapping(node)
-        instance_macros = [InstanceMacro(m.node, from_module, name_str, mapping) for m in self._macros.values()]
+        instance_macros = [
+            InstanceMacro(m.node, from_module, name_str, mapping)
+            for m in self._macros.values()
+        ]
         return {m.full_name(): m for m in instance_macros}
+
 
 class MacroTransformer(ast.NodeTransformer):
     __qualname__ = 'MacroTransformer'
@@ -245,6 +298,7 @@ class MacroTransformer(ast.NodeTransformer):
         if replacement is None:
             return node
         return copy.deepcopy(replacement)
+
 
 class MacroVisitor(ast.NodeVisitor):
     __qualname__ = 'MacroVisitor'
@@ -353,7 +407,9 @@ class MacroVisitor(ast.NodeVisitor):
 
     def visit_Assign(self, node):
         call = node.value
-        if isinstance(call, ast.Call) and isinstance(call.func, (ast.Name, ast.Attribute)):
+        if isinstance(call, ast.Call) and isinstance(call.func,
+                                                     (ast.Name,
+                                                      ast.Attribute)):
             name_str = _expand_attribute(call.func)
             m = self._macros.get(name_str)
             if m is not None and m != MACRO_SYMBOL:
@@ -388,7 +444,8 @@ class MacroVisitor(ast.NodeVisitor):
                     while True:
                         for (symbol, asname) in v:
                             if symbol == '.':
-                                self._macros['{}.macro'.format(asname)] = MACRO_SYMBOL
+                                self._macros['{}.macro'.format(
+                                    asname)] = MACRO_SYMBOL
                             else:
                                 while symbol == 'macro':
                                     self._macros[asname] = MACRO_SYMBOL
@@ -397,24 +454,33 @@ class MacroVisitor(ast.NodeVisitor):
                             to_delete = set()
                             for (symbol, asname) in v:
                                 if symbol == '.':
-                                    for (macro_name, macro_value) in import_macros.items():
+                                    for (macro_name,
+                                         macro_value) in import_macros.items():
                                         if macro_value == MACRO_SYMBOL and name != 'macro':
                                             pass
-                                        elif isinstance(macro_value, MacroBase) and name != macro_value.from_module:
+                                        elif isinstance(
+                                                macro_value,
+                                                MacroBase) and name != macro_value.from_module:
                                             pass
-                                        full_name = sys.intern('{}.{}'.format(name, macro_name))
+                                        full_name = sys.intern('{}.{}'.format(
+                                            name, macro_name))
                                         self._macros[full_name] = macro_value
                                 elif symbol in import_macros:
-                                    self._macros[asname] = import_macros[symbol]
+                                    self._macros[asname] = import_macros[
+                                        symbol]
                                     to_delete.add(symbol)
                                 else:
                                     prefix = symbol + '.'
                                     prefix_len = len(prefix)
-                                    for (macro_name, macro_value) in import_macros.items():
+                                    for (macro_name,
+                                         macro_value) in import_macros.items():
                                         while macro_name.startswith(prefix):
                                             remainder = macro_name[prefix_len:]
-                                            new_symbol = sys.intern('{}.{}'.format(asname, remainder))
-                                            self._macros[new_symbol] = macro_value
+                                            new_symbol = sys.intern(
+                                                '{}.{}'.format(asname,
+                                                               remainder))
+                                            self._macros[
+                                                new_symbol] = macro_value
                                             to_delete.add(symbol)
                             if to_delete:
                                 names = statement.names
@@ -435,12 +501,16 @@ class MacroVisitor(ast.NodeVisitor):
                         to_delete = set()
                         for (symbol, asname) in v:
                             if symbol == '.':
-                                for (macro_name, macro_value) in import_macros.items():
+                                for (macro_name,
+                                     macro_value) in import_macros.items():
                                     if macro_value == MACRO_SYMBOL and name != 'macro':
                                         pass
-                                    elif isinstance(macro_value, MacroBase) and name != macro_value.from_module:
+                                    elif isinstance(
+                                            macro_value,
+                                            MacroBase) and name != macro_value.from_module:
                                         pass
-                                    full_name = sys.intern('{}.{}'.format(name, macro_name))
+                                    full_name = sys.intern('{}.{}'.format(
+                                        name, macro_name))
                                     self._macros[full_name] = macro_value
                             elif symbol in import_macros:
                                 self._macros[asname] = import_macros[symbol]
@@ -448,10 +518,12 @@ class MacroVisitor(ast.NodeVisitor):
                             else:
                                 prefix = symbol + '.'
                                 prefix_len = len(prefix)
-                                for (macro_name, macro_value) in import_macros.items():
+                                for (macro_name,
+                                     macro_value) in import_macros.items():
                                     while macro_name.startswith(prefix):
                                         remainder = macro_name[prefix_len:]
-                                        new_symbol = sys.intern('{}.{}'.format(asname, remainder))
+                                        new_symbol = sys.intern('{}.{}'.format(
+                                            asname, remainder))
                                         self._macros[new_symbol] = macro_value
                                         to_delete.add(symbol)
                         if to_delete:
@@ -468,6 +540,7 @@ class MacroVisitor(ast.NodeVisitor):
                             if not names:
                                 return
         return statement
+
 
 def _append_node_imports(node, imports):
     if isinstance(node, ast.Import):
@@ -486,11 +559,13 @@ def _append_node_imports(node, imports):
         return True
     return False
 
+
 def _get_module_imports(tree):
     imports = {}
     for node in tree.body:
         _append_node_imports(node, imports)
     return imports
+
 
 def _get_opt_level(opt):
     if isinstance(opt, int):
@@ -500,18 +575,27 @@ def _get_opt_level(opt):
     opt_level = 1 if opt else 0
     return opt_level
 
+
 def _parse_module(name, source, opt_level):
     flags = ast.PyCF_ONLY_AST
     a = compile(source, name, 'exec', flags, 0, opt_level)
     return a
 
-TreeVisitorPair = collections.namedtuple('TreeVisitorPair', ['tree', 'visitor'])
-SubPackageRequest = collections.namedtuple('SubPackageRequest', ['path', 'children'])
+
+TreeVisitorPair = collections.namedtuple('TreeVisitorPair', ['tree',
+                                                             'visitor'])
+SubPackageRequest = collections.namedtuple('SubPackageRequest', ['path',
+                                                                 'children'])
+
 
 class ModuleSuiteImporter:
     __qualname__ = 'ModuleSuiteImporter'
 
-    def __init__(self, opt=None, use_macros=True, private=False, constants=None):
+    def __init__(self,
+                 opt=None,
+                 use_macros=True,
+                 private=False,
+                 constants=None):
         self.opt_level = _get_opt_level(opt)
         self.use_macros = use_macros
         self.private = private
@@ -525,7 +609,8 @@ class ModuleSuiteImporter:
         if loader is None:
             loader = self.find_module(name, path=path)
             if loader is None:
-                raise ImportError("Failed to find loader for module '{}'".format(name))
+                raise ImportError(
+                    "Failed to find loader for module '{}'".format(name))
         module = self._get_cached_module(name)
         if module is not None:
             return module
@@ -541,7 +626,8 @@ class ModuleSuiteImporter:
         if name in self.ast_cache:
             value = self.ast_cache[name]
             if value is None:
-                raise RuntimeError("Partially loaded AST for '{}'".format(name))
+                raise RuntimeError("Partially loaded AST for '{}'".format(
+                    name))
             return value.tree
         self._do_load_ast(name, loader)
         if name in self.ast_cache:
@@ -596,7 +682,8 @@ class ModuleSuiteImporter:
                     if not hasattr(parent_loader, 'path'):
                         continue
                     package_path = make_package_path(parent_loader.path)
-                    module_loader = self.find_module(fullname, path=package_path)
+                    module_loader = self.find_module(fullname,
+                                                     path=package_path)
                 else:
                     module_loader = self.find_module(fullname)
                 loaders[fullname] = module_loader
@@ -616,21 +703,24 @@ class ModuleSuiteImporter:
                 tree = _parse_module(fullname, data, self.opt_level)
                 to_process[fullname] = tree
                 for (imp_name, imp_level) in _get_module_imports(tree):
-                    import_name = self._resolve_relative(imp_name, fullname, imp_level)
+                    import_name = self._resolve_relative(imp_name, fullname,
+                                                         imp_level)
                     while import_name:
                         if import_name not in imported:
                             pending.append(import_name)
                         dependents[import_name].add(fullname)
                         import_name = import_name.rpartition('.')[0]
             relevant = set(to_process.keys())
-            sccs = graph_algos.strongly_connected_components(relevant, dependents.get)
+            sccs = graph_algos.strongly_connected_components(relevant,
+                                                             dependents.get)
             order = []
             for scc in sccs:
                 order.extend(sorted(scc))
             while order:
                 fullname = order.pop()
                 tree = to_process[fullname]
-                visitor = MacroVisitor(self, fullname, constants=self.constants)
+                visitor = MacroVisitor(
+                    self, fullname, constants=self.constants)
                 visitor.visit(tree)
                 self.ast_cache[fullname] = TreeVisitorPair(tree, visitor)
                 m = visitor.get_macros()
@@ -640,7 +730,8 @@ class ModuleSuiteImporter:
                         existing.__macros__ = m
         finally:
             for fullname in order:
-                while fullname in self.ast_cache and self.ast_cache[fullname] is None:
+                while fullname in self.ast_cache and self.ast_cache[
+                        fullname] is None:
                     del self.ast_cache[fullname]
 
     def _exec_module(self, name, tree, loader):
@@ -668,7 +759,7 @@ class ModuleSuiteImporter:
             if m:
                 module.__macros__ = m
             code = compile(tree, module.__file__, 'exec', 0, 0, self.opt_level)
-            exec(code, vars(module))
+            exec (code, vars(module))
         except:
             if not is_reload:
                 self._uncache_module(name)
@@ -692,7 +783,8 @@ class ModuleSuiteImporter:
                 try:
                     dot = package.rindex('.', 0, dot)
                 except ValueError:
-                    raise ValueError('attempted relative import beyond top-level package')
+                    raise ValueError(
+                        'attempted relative import beyond top-level package')
             if name:
                 name = '{0}.{1}'.format(package[:dot], name)
             else:
@@ -702,7 +794,9 @@ class ModuleSuiteImporter:
     def _cache_module(self, name, module):
         existing = sys.modules.get(name)
         if existing is not None:
-            raise RuntimeError("Attempting to cache on top of an existing module '{}'".format(name))
+            raise RuntimeError(
+                "Attempting to cache on top of an existing module '{}'".format(
+                    name))
         else:
             self.new_modules.add(name)
             sys.modules[name] = module
@@ -741,6 +835,7 @@ class ModuleSuiteImporter:
         finally:
             self._unregister_meta_path()
 
+
 class ModuleSuiteLoader:
     __qualname__ = 'ModuleSuiteLoader'
 
@@ -771,11 +866,12 @@ class ModuleSuiteLoader:
     def path(self):
         return self._loader.path
 
+
 def make_package_path(loader_path):
     loader_directory = os.path.dirname(loader_path)
     return [loader_directory]
 
+
 def c_api_register_global_importer(opt=None, constants=None):
     importer = ModuleSuiteImporter(opt=opt, constants=constants)
     importer._register_meta_path()
-

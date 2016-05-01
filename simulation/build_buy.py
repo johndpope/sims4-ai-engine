@@ -9,6 +9,7 @@ import routing
 import services
 import sims4.utils
 
+
 class ObjectOriginLocation(enum.Int, export=False):
     __qualname__ = 'ObjectOriginLocation'
     UNKNOWN = 0
@@ -18,9 +19,11 @@ class ObjectOriginLocation(enum.Int, export=False):
     OBJECT_INVENTORY = 4
     LANDING_STRIP = 5
 
+
 class FloorFeatureType(enum.Int):
     __qualname__ = 'FloorFeatureType'
     BURNT = 0
+
 
 try:
     import _buildbuy
@@ -185,10 +188,13 @@ except ImportError:
         def get_variant_group_id(*_, **__):
             pass
 
+
 logger = Logger('BuildBuy')
+
 
 def remove_object_from_buildbuy_system(obj_id, zone_id, persist=True):
     _buildbuy.remove_object_from_buildbuy_system(obj_id, zone_id, persist)
+
 
 get_wall_contours = _buildbuy.get_wall_contours
 add_object_to_buildbuy_system = _buildbuy.add_object_to_buildbuy_system
@@ -230,31 +236,48 @@ list_floor_features = _buildbuy.list_floor_features
 scan_floor_features = _buildbuy.scan_floor_features
 get_variant_group_id = _buildbuy.get_variant_group_id
 
-def move_object_to_household_inventory(obj, object_location_type=ObjectOriginLocation.ON_LOT):
+
+def move_object_to_household_inventory(
+        obj, object_location_type=ObjectOriginLocation.ON_LOT):
     household_id = obj.get_household_owner_id()
     if household_id is None:
-        logger.error('This object {} is not owned by any household. Request to move to household inventory will be ignored.', obj, owner='mduke')
+        logger.error(
+            'This object {} is not owned by any household. Request to move to household inventory will be ignored.',
+            obj,
+            owner='mduke')
         return
     household = services.household_manager().get(household_id)
     obj.new_in_inventory = True
     obj.remove_reference_from_parent()
     stack_count = obj.stack_count()
     obj.set_stack_count(1)
-    _buildbuy.add_object_to_household_inventory(obj.id, household_id, zone_utils.get_zone_id(), household.account.id, object_location_type, stack_count)
+    _buildbuy.add_object_to_household_inventory(
+        obj.id, household_id, zone_utils.get_zone_id(), household.account.id,
+        object_location_type, stack_count)
+
 
 def has_any_objects_in_household_inventory(object_list, household_id):
     household = services.household_manager().get(household_id)
-    _buildbuy.has_any_objects_in_household_inventory(object_list, household_id, zone_utils.get_zone_id(), household.account.id)
+    _buildbuy.has_any_objects_in_household_inventory(object_list, household_id,
+                                                     zone_utils.get_zone_id(),
+                                                     household.account.id)
+
 
 def find_objects_in_household_inventory(object_list, household_id):
     household = services.household_manager().get(household_id)
-    return _buildbuy.find_objects_in_household_inventory(object_list, household_id, zone_utils.get_zone_id(), household.account.id)
+    return _buildbuy.find_objects_in_household_inventory(
+        object_list, household_id, zone_utils.get_zone_id(),
+        household.account.id)
+
 
 def object_exists_in_household_inventory(sim_id, household_id):
-    return _buildbuy.object_exists_in_household_inventory(sim_id, household_id, zone_utils.get_zone_id())
+    return _buildbuy.object_exists_in_household_inventory(
+        sim_id, household_id, zone_utils.get_zone_id())
+
 
 def __reload__(old_module_vars):
     pass
+
 
 class BuyCategory(enum.IntFlags):
     __qualname__ = 'BuyCategory'
@@ -272,6 +295,7 @@ class BuyCategory(enum.IntFlags):
     SURFACE = 4096
     VEHICLE = 8192
     DEFAULT = 2147483648
+
 
 class PlacementFlags(enum.IntFlags, export=False):
     __qualname__ = 'PlacementFlags'
@@ -294,13 +318,17 @@ class PlacementFlags(enum.IntFlags, export=False):
     WALL_GRAPH_PLACEMENT = REQUIRES_WALL | REQUIRES_FENCE
     SNAP_TO_WALL = REQUIRES_WALL | ADJUST_HEIGHT_ON_WALL
 
+
 BUILD_BUY_OBJECT_LEAK_DISABLED = 'in build buy'
+
 
 def get_all_objects_with_flags_gen(objs, buy_category_flags):
     for obj in objs:
-        if not get_object_buy_category_flags(obj.definition.id) & buy_category_flags:
+        if not get_object_buy_category_flags(
+                obj.definition.id) & buy_category_flags:
             pass
         yield obj
+
 
 @sims4.utils.exception_protected(None)
 def c_api_wall_contour_update(zone_id, wall_type):
@@ -308,14 +336,18 @@ def c_api_wall_contour_update(zone_id, wall_type):
         while wall_type == 0 or wall_type == 2:
             services.get_zone(zone_id).wall_contour_update_callbacks()
 
+
 @sims4.utils.exception_protected(None)
 def c_api_foundation_and_level_height_update(zone_id):
     with sims4.zone_utils.global_zone_lock(zone_id):
-        services.get_zone(zone_id).foundation_and_level_height_update_callbacks()
+        services.get_zone(
+            zone_id).foundation_and_level_height_update_callbacks()
+
 
 @sims4.utils.exception_protected(None)
 def c_api_navmesh_update(zone_id):
     pass
+
 
 @sims4.utils.exception_protected(None)
 def c_api_modify_household_funds(amount, household_id, reason, zone_id):
@@ -323,9 +355,12 @@ def c_api_modify_household_funds(amount, household_id, reason, zone_id):
         household_manager = services.household_manager()
         household = household_manager.get(household_id)
         if household is None:
-            if household_manager.try_add_pending_household_funds(household_id, amount, reason):
+            if household_manager.try_add_pending_household_funds(
+                    household_id, amount, reason):
                 return True
-            logger.error('Invalid Household id {} when attempting to modify household funds.', household_id)
+            logger.error(
+                'Invalid Household id {} when attempting to modify household funds.',
+                household_id)
             return False
         if amount > 0:
             household.funds.add(amount, reason, None, count_as_earnings=False)
@@ -333,13 +368,15 @@ def c_api_modify_household_funds(amount, household_id, reason, zone_id):
             household.funds.remove(-amount, reason, None)
         return True
 
+
 @sims4.utils.exception_protected(None)
 def c_api_buildbuy_session_begin(zone_id, account_id):
     with sims4.zone_utils.global_zone_lock(zone_id):
         posture_graph_service = services.current_zone().posture_graph_service
         posture_graph_service.on_enter_buildbuy()
         services.current_zone().on_build_buy_enter()
-        indexed_manager.IndexedManager.add_gc_collect_disable_reason(BUILD_BUY_OBJECT_LEAK_DISABLED)
+        indexed_manager.IndexedManager.add_gc_collect_disable_reason(
+            BUILD_BUY_OBJECT_LEAK_DISABLED)
         resource_keys = []
         current_zone = services.current_zone()
         household = current_zone.get_active_lot_owner_household()
@@ -348,6 +385,7 @@ def c_api_buildbuy_session_begin(zone_id, account_id):
                 resource_keys.append(unlock)
         update_gameplay_unlocked_products(resource_keys, zone_id, account_id)
     return True
+
 
 @sims4.utils.exception_protected(None)
 def buildbuy_session_end(zone_id):
@@ -358,23 +396,33 @@ def buildbuy_session_end(zone_id):
         posture_graph_service.on_exit_buildbuy()
         pythonutils.try_highwater_gc()
         venue_type = get_current_venue(zone_id)
-        logger.assert_raise(venue_type is not None, ' Venue Type is None in buildbuy session end for zone id:{}', zone_id, owner='sscholl')
+        logger.assert_raise(
+            venue_type is not None,
+            ' Venue Type is None in buildbuy session end for zone id:{}',
+            zone_id,
+            owner='sscholl')
         if venue_type is not None:
             venue_tuning = services.venue_manager().get(venue_type)
-            services.current_zone().venue_service.set_venue_and_schedule_events(venue_tuning)
+            services.current_zone(
+            ).venue_service.set_venue_and_schedule_events(venue_tuning)
         services.current_zone().on_build_buy_exit()
         from objects.doors.front_door import find_and_set_front_door
         find_and_set_front_door()
 
+
 @sims4.utils.exception_protected(None)
-def c_api_buildbuy_session_end(zone_id, account_id, pending_navmesh_rebuild:bool=False):
+def c_api_buildbuy_session_end(zone_id,
+                               account_id,
+                               pending_navmesh_rebuild: bool=False):
     with sims4.zone_utils.global_zone_lock(zone_id):
         zone = services.get_zone(zone_id)
         fence_id = zone.get_current_fence_id_and_increment()
         routing.flush_planner(False)
         routing.add_fence(fence_id)
-        indexed_manager.IndexedManager.remove_gc_collect_disable_reason(BUILD_BUY_OBJECT_LEAK_DISABLED)
+        indexed_manager.IndexedManager.remove_gc_collect_disable_reason(
+            BUILD_BUY_OBJECT_LEAK_DISABLED)
     return True
+
 
 @sims4.utils.exception_protected(None)
 def c_api_buildbuy_get_save_object_data(zone_id, obj_id):
@@ -386,6 +434,7 @@ def c_api_buildbuy_get_save_object_data(zone_id, obj_id):
         save_data = obj.save_object(object_list.objects)
     return save_data
 
+
 @sims4.utils.exception_protected(None)
 def c_api_house_inv_obj_added(zone_id, household_id, obj_id, obj_def_id):
     with sims4.zone_utils.global_zone_lock(zone_id):
@@ -394,24 +443,31 @@ def c_api_house_inv_obj_added(zone_id, household_id, obj_id, obj_def_id):
             logger.error('Invalid Household id: {}', household_id)
             return
         collection_tracker = household.collection_tracker
-        collection_tracker.check_add_collection_item(household, obj_id, obj_def_id)
+        collection_tracker.check_add_collection_item(household, obj_id,
+                                                     obj_def_id)
+
 
 @sims4.utils.exception_protected(None)
 def c_api_house_inv_obj_removed(zone_id, household_id, obj_id, obj_def_id):
     pass
+
 
 @sims4.utils.exception_protected(None)
 def c_api_set_object_location(zone_id, obj_id, routing_surface, transform):
     with sims4.zone_utils.global_zone_lock(zone_id):
         obj = services.object_manager().get(obj_id)
         if obj is None:
-            logger.error('Trying to place an invalid object id: {}', obj_id, owner='camilogarcia')
+            logger.error('Trying to place an invalid object id: {}',
+                         obj_id,
+                         owner='camilogarcia')
             return
         obj.move_to(routing_surface=routing_surface, transform=transform)
+
 
 @sims4.utils.exception_protected(None)
 def c_api_on_apply_blueprint_lot(zone_id):
     with sims4.zone_utils.global_zone_lock(zone_id):
-        for sim in services.sim_info_manager(zone_id).instanced_sims_on_active_lot_gen(allow_hidden_flags=ALL_HIDDEN_REASONS):
+        for sim in services.sim_info_manager(
+                zone_id).instanced_sims_on_active_lot_gen(
+                    allow_hidden_flags=ALL_HIDDEN_REASONS):
             sim.fgl_reset_to_landing_strip()
-

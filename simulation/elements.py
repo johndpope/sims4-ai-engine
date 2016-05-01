@@ -1,4 +1,3 @@
-
 class Element:
     __qualname__ = 'Element'
     __slots__ = ('_element_handle', '_parent_handle')
@@ -56,6 +55,7 @@ class Element:
     def tracing_repr(self):
         return self.__repr__()
 
+
 class ParentElement(Element):
     __qualname__ = 'ParentElement'
     __slots__ = '_child_handle'
@@ -76,7 +76,7 @@ class ParentElement(Element):
 
     def _get_child_handles(self):
         if self._child_handle is not None:
-            return (self._child_handle,)
+            return (self._child_handle, )
         return ()
 
     def _child_scheduled(self, timeline, child_handle):
@@ -92,9 +92,10 @@ class ParentElement(Element):
         self._child_handle = None
         super()._teardown()
 
+
 class RunChildElement(ParentElement):
     __qualname__ = 'RunChildElement'
-    __slots__ = ('child_element',)
+    __slots__ = ('child_element', )
 
     @classmethod
     def shortname(cls):
@@ -112,9 +113,11 @@ class RunChildElement(ParentElement):
         super()._teardown()
         self.child_element = None
 
+
 class MinimumTimeElement(RunChildElement):
     __qualname__ = 'MinimumTimeElement'
-    __slots__ = ('_child_result', '_minimum_time_required', '_start_time', '_slept')
+    __slots__ = ('_child_result', '_minimum_time_required', '_start_time',
+                 '_slept')
 
     @classmethod
     def shortname(cls):
@@ -156,11 +159,13 @@ class MinimumTimeElement(RunChildElement):
             status = 'slept'
         else:
             status = 'not slept'
-        return '<{}; {}; {}>'.format(self.shortname(), status, self._minimum_time_required)
+        return '<{}; {}; {}>'.format(self.shortname(), status,
+                                     self._minimum_time_required)
+
 
 class FunctionElement(Element):
     __qualname__ = 'FunctionElement'
-    __slots__ = ('callback',)
+    __slots__ = ('callback', )
 
     @classmethod
     def shortname(cls):
@@ -181,11 +186,13 @@ class FunctionElement(Element):
         super()._teardown()
 
     def __repr__(self):
-        return '<{}; {}>'.format(self.shortname(), _format_callable(self.callback))
+        return '<{}; {}>'.format(self.shortname(),
+                                 _format_callable(self.callback))
+
 
 class GeneratorElementBase(ParentElement):
     __qualname__ = 'GeneratorElementBase'
-    __slots__ = ('generator',)
+    __slots__ = ('generator', )
 
     @classmethod
     def shortname(cls):
@@ -204,7 +211,8 @@ class GeneratorElementBase(ParentElement):
         try:
             child = next(self.generator)
             if not _check_yield(child):
-                raise AssertionError('Yielding non-Element handle: {}'.format(child))
+                raise AssertionError('Yielding non-Element handle: {}'.format(
+                    child))
             return child
         except StopIteration as exc:
             return GeneratorElementBase._result_value(exc)
@@ -213,7 +221,8 @@ class GeneratorElementBase(ParentElement):
         try:
             child = self.generator.send(child_result)
             if not _check_yield(child):
-                raise AssertionError('Yielding non-Element handle: {}'.format(child))
+                raise AssertionError('Yielding non-Element handle: {}'.format(
+                    child))
             return child
         except StopIteration as exc:
             return GeneratorElementBase._result_value(exc)
@@ -245,10 +254,12 @@ class GeneratorElementBase(ParentElement):
             name = self._get_default_gen_name()
         elif self.generator.gi_running:
             status = 'running'
-            name = '{}@{}'.format(self.generator.gi_code.co_name, self.generator.gi_code.co_firstlineno)
+            name = '{}@{}'.format(self.generator.gi_code.co_name,
+                                  self.generator.gi_code.co_firstlineno)
         elif self.generator.gi_frame is not None:
             status = 'active'
-            name = '{}@{}'.format(self.generator.gi_code.co_name, self.generator.gi_code.co_firstlineno)
+            name = '{}@{}'.format(self.generator.gi_code.co_name,
+                                  self.generator.gi_code.co_firstlineno)
             if self._child_handle is not None:
                 child_element = self._child_handle.element
                 if child_element is not None:
@@ -264,9 +275,10 @@ class GeneratorElementBase(ParentElement):
     def tracing_repr(self):
         return self._repr_helper(tracing=True)
 
+
 class GeneratorElement(GeneratorElementBase):
     __qualname__ = 'GeneratorElement'
-    __slots__ = ('pending_generator',)
+    __slots__ = ('pending_generator', )
 
     @classmethod
     def shortname(cls):
@@ -288,6 +300,7 @@ class GeneratorElement(GeneratorElementBase):
             return _format_callable(self.pending_generator)
         return super()._get_default_gen_name()
 
+
 class SubclassableGeneratorElement(GeneratorElementBase):
     __qualname__ = 'SubclassableGeneratorElement'
     __slots__ = ()
@@ -307,6 +320,7 @@ class SubclassableGeneratorElement(GeneratorElementBase):
 
     def _get_default_gen_name(self):
         return type(self).__name__
+
 
 class SleepElement(Element):
     __qualname__ = 'SleepElement'
@@ -340,7 +354,10 @@ class SleepElement(Element):
             status = 'ready to sleep'
         else:
             status = 'ready to wake'
-        return '<{}; {}; {}; {}>'.format(self.shortname(), self.delay, status, 'soft-stopped' if self.soft_stopped else 'not-stopped')
+        return '<{}; {}; {}; {}>'.format(
+            self.shortname(), self.delay, status, 'soft-stopped'
+            if self.soft_stopped else 'not-stopped')
+
 
 class SoftSleepElement(SleepElement):
     __qualname__ = 'SoftSleepElement'
@@ -364,11 +381,14 @@ class SoftSleepElement(SleepElement):
             self.soft_stopped = True
             timeline.reschedule(self._element_handle, timeline.now)
 
+
 class CallbackElement(ParentElement):
     __qualname__ = 'CallbackElement'
-    __slots__ = ('_child_element', '_complete_callback', '_hard_stop_callback', '_teardown_callback')
+    __slots__ = ('_child_element', '_complete_callback', '_hard_stop_callback',
+                 '_teardown_callback')
 
-    def __init__(self, child_element, complete_callback, hard_stop_callback, teardown_callback):
+    def __init__(self, child_element, complete_callback, hard_stop_callback,
+                 teardown_callback):
         super().__init__()
         self._child_element = child_element
         self._complete_callback = complete_callback
@@ -399,6 +419,7 @@ class CallbackElement(ParentElement):
         self._complete_callback = None
         self._hard_stop_callback = None
         self._teardown_callback = None
+
 
 class BusyWaitElement(ParentElement):
     __qualname__ = 'BusyWaitElement'
@@ -445,7 +466,9 @@ class BusyWaitElement(ParentElement):
             self._sleep_handle = None
 
     def __repr__(self):
-        return '<{}; {}>'.format(self.shortname(), self._test_callable.__code__.co_name)
+        return '<{}; {}>'.format(self.shortname(),
+                                 self._test_callable.__code__.co_name)
+
 
 class SequenceElement(ParentElement):
     __qualname__ = 'SequenceElement'
@@ -496,11 +519,18 @@ class SequenceElement(ParentElement):
         self.soft_stopped = True
 
     def __repr__(self):
-        return '<{}; [{}]; index {}>'.format(self.shortname(), ', '.join(str(e) for e in self.queue) if self.queue is not None else 'None', self.index)
+        return '<{}; [{}]; index {}>'.format(
+            self.shortname(), ', '.join(str(e) for e in self.queue)
+            if self.queue is not None else 'None', self.index)
 
     def tracing_repr(self):
-        active_element_str = self.queue[self.index].tracing_repr() if self.index < len(self.queue) else 'Done'
-        return '<{};{}  [{}]; index {}>'.format(self.shortname(), active_element_str, ', '.join(str(e) for e in self.queue) if self.queue is not None else 'None', self.index)
+        active_element_str = self.queue[self.index].tracing_repr(
+        ) if self.index < len(self.queue) else 'Done'
+        return '<{};{}  [{}]; index {}>'.format(
+            self.shortname(), active_element_str, ', '.join(
+                str(e) for e in self.queue)
+            if self.queue is not None else 'None', self.index)
+
 
 class RememberSoftStopElement(ParentElement):
     __qualname__ = 'RememberSoftStopElement'
@@ -532,10 +562,15 @@ class RememberSoftStopElement(ParentElement):
         super()._teardown()
 
     def __repr__(self):
-        return '<{}; {}; {}>'.format(self.shortname(), self._child_element, 'stop-pending' if self.soft_stopped else 'running')
+        return '<{}; {}; {}>'.format(self.shortname(), self._child_element,
+                                     'stop-pending'
+                                     if self.soft_stopped else 'running')
 
     def tracing_repr(self):
-        return '<{}; {}; {}>'.format(self.shortname(), self._child_element.tracing_repr(), 'stop-pending' if self.soft_stopped else 'running')
+        return '<{}; {}; {}>'.format(
+            self.shortname(), self._child_element.tracing_repr(),
+            'stop-pending' if self.soft_stopped else 'running')
+
 
 class RepeatElement(RememberSoftStopElement):
     __qualname__ = 'RepeatElement'
@@ -556,10 +591,15 @@ class RepeatElement(RememberSoftStopElement):
         return child_result
 
     def __repr__(self):
-        return '<{}; {}; {}>'.format(self.shortname(), self._child_element, 'stop-pending' if self.soft_stopped else 'looping')
+        return '<{}; {}; {}>'.format(self.shortname(), self._child_element,
+                                     'stop-pending'
+                                     if self.soft_stopped else 'looping')
 
     def tracing_repr(self):
-        return '<{}; {}; {}>'.format(self.shortname(), self._child_element.tracing_repr(), 'stop-pending' if self.soft_stopped else 'looping')
+        return '<{}; {}; {}>'.format(
+            self.shortname(), self._child_element.tracing_repr(),
+            'stop-pending' if self.soft_stopped else 'looping')
+
 
 class CriticalSectionElement(ParentElement):
     __qualname__ = 'CriticalSectionElement'
@@ -605,10 +645,15 @@ class CriticalSectionElement(ParentElement):
         super()._teardown()
 
     def __repr__(self):
-        return '<{}; {}; {}; {}; {}>'.format(self.shortname(), ['init', 'work', 'cleanup'][self.state], self.work, self.cleanup, self.result)
+        return '<{}; {}; {}; {}; {}>'.format(
+            self.shortname(), ['init', 'work', 'cleanup'][self.state],
+            self.work, self.cleanup, self.result)
 
     def tracing_repr(self):
-        return '<{}; {}; {}; {}; {}>'.format(self.shortname(), ['init', 'work', 'cleanup'][self.state], self.work.tracing_repr(), self.cleanup.tracing_repr(), self.result)
+        return '<{}; {}; {}; {}; {}>'.format(
+            self.shortname(), ['init', 'work', 'cleanup'][self.state],
+            self.work.tracing_repr(), self.cleanup.tracing_repr(), self.result)
+
 
 class AllElement(Element):
     __qualname__ = 'AllElement'
@@ -624,7 +669,9 @@ class AllElement(Element):
         self.active = {}
         for child in self.inactive:
             while not isinstance(child, Element):
-                raise TypeError('Children of All element must be elements, not {}'.format(child))
+                raise TypeError(
+                    'Children of All element must be elements, not {}'.format(
+                        child))
         self.result = None
 
     def add_work(self, timeline, child):
@@ -636,7 +683,8 @@ class AllElement(Element):
                 handle = element._parent_handle
                 element = handle.element
         if handle is None:
-            raise AssertionError('Work can only be added to an All element when it in the running chain.')
+            raise AssertionError(
+                'Work can only be added to an All element when it in the running chain.')
         self.active[child] = child_handle = timeline.schedule_asap(child)
         child_handle.element.set_parent_handle(handle)
 
@@ -681,7 +729,10 @@ class AllElement(Element):
         super()._teardown()
 
     def __repr__(self):
-        return '<{}; active: [{}]; inactive: [{}]>'.format(self.shortname(), ', '.join(str(child) for child in self.active), ', '.join(str(child) for child in self.inactive))
+        return '<{}; active: [{}]; inactive: [{}]>'.format(
+            self.shortname(), ', '.join(str(child) for child in self.active),
+            ', '.join(str(child) for child in self.inactive))
+
 
 class ConditionalElement(ParentElement):
     __qualname__ = 'ConditionalElement'
@@ -712,7 +763,10 @@ class ConditionalElement(ParentElement):
         super()._teardown()
 
     def __repr__(self):
-        return '<{}; test:{}; true:{}; false:{}>'.format(self.shortname(), self._callable_test, self._true_element, self._false_element)
+        return '<{}; test:{}; true:{}; false:{}>'.format(
+            self.shortname(), self._callable_test, self._true_element,
+            self._false_element)
+
 
 class WithFinallyElement(ParentElement):
     __qualname__ = 'WithFinallyElement'
@@ -755,11 +809,17 @@ class WithFinallyElement(ParentElement):
         super()._teardown()
 
     def __repr__(self):
-        return '<{}; element:{}; finally:{}>'.format(self.shortname(), str(self._element), _format_callable(self._finally_callable))
+        return '<{}; element:{}; finally:{}>'.format(
+            self.shortname(), str(self._element),
+            _format_callable(self._finally_callable))
 
     def tracing_repr(self):
-        str_element = self._element.tracing_repr() if self._element is not None else 'None'
-        return '<{}; element:{}; finally:{}>'.format(self.shortname(), str_element, _format_callable(self._finally_callable))
+        str_element = self._element.tracing_repr(
+        ) if self._element is not None else 'None'
+        return '<{}; element:{}; finally:{}>'.format(
+            self.shortname(), str_element,
+            _format_callable(self._finally_callable))
+
 
 class MustRunElement(ParentElement):
     __qualname__ = 'MustRunElement'
@@ -785,8 +845,10 @@ class MustRunElement(ParentElement):
         return '<{}; {}>'.format(self.shortname(), self._child_element)
 
     def tracing_repr(self):
-        str_element = self._child_element.tracing_repr() if self._child_element is not None else 'None'
+        str_element = self._child_element.tracing_repr(
+        ) if self._child_element is not None else 'None'
         return '<{}; {}>'.format(self.shortname(), str_element)
+
 
 class ResultElement(ParentElement):
     __qualname__ = 'ResultElement'
@@ -814,10 +876,13 @@ class ResultElement(ParentElement):
         super()._teardown()
 
     def __repr__(self):
-        return '<{}; result: {}; child: {}>'.format(self.shortname(), self.result, self._child_element)
+        return '<{}; result: {}; child: {}>'.format(
+            self.shortname(), self.result, self._child_element)
 
     def tracing_repr(self):
-        return '<{}; result: {}; child: {}>'.format(self.shortname(), self.result, self._child_element.tracing_repr())
+        return '<{}; result: {}; child: {}>'.format(
+            self.shortname(), self.result, self._child_element.tracing_repr())
+
 
 class OverrideResultElement(ParentElement):
     __qualname__ = 'OverrideResultElement'
@@ -841,14 +906,19 @@ class OverrideResultElement(ParentElement):
         return self._result
 
     def __repr__(self):
-        return '<{}; result: {}; {}>'.format(self.shortname(), self._result, self._child_element)
+        return '<{}; result: {}; {}>'.format(self.shortname(), self._result,
+                                             self._child_element)
 
     def call_repr_(self):
-        str_element = self._child_element.tracing_repr() if self._child_element is not None else 'None'
-        return '<{}; result: {}; {}>'.format(self.shortname(), self._result, str_element)
+        str_element = self._child_element.tracing_repr(
+        ) if self._child_element is not None else 'None'
+        return '<{}; result: {}; {}>'.format(self.shortname(), self._result,
+                                             str_element)
+
 
 def _check_yield(result):
     return hasattr(result, 'element') and isinstance(result.element, Element)
+
 
 def _format_callable(fn):
     if fn is None:
@@ -856,4 +926,3 @@ def _format_callable(fn):
     if hasattr(fn, '__qualname__'):
         return '{}@{}'.format(fn.__qualname__, fn.__code__.co_firstlineno)
     return str(fn)
-

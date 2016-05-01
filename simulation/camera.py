@@ -9,10 +9,13 @@ _follow_mode = None
 _zone_id = None
 _household_id = None
 
+
 def deserialize(client=None):
     global _sim_id, _target_position, _camera_position, _follow_mode, _zone_id
-    save_slot_data_msg = services.get_persistence_service().get_save_slot_proto_buff()
-    if save_slot_data_msg is not None and save_slot_data_msg.HasField('gameplay_data'):
+    save_slot_data_msg = services.get_persistence_service(
+    ).get_save_slot_proto_buff()
+    if save_slot_data_msg is not None and save_slot_data_msg.HasField(
+            'gameplay_data'):
         gameplay_data = save_slot_data_msg.gameplay_data
         if gameplay_data.HasField('camera_data'):
             camera_data = save_slot_data_msg.gameplay_data.camera_data
@@ -22,9 +25,12 @@ def deserialize(client=None):
                 _camera_position = camera_data.camera_position
                 _follow_mode = camera_data.follow_mode
                 _zone_id = camera_data.zone_id
-                if camera_data.HasField('household_id') and services.active_lot().owner_household_id != camera_data.household_id:
+                if camera_data.HasField(
+                        'household_id') and services.active_lot(
+                        ).owner_household_id != camera_data.household_id:
                     return False
-                if _follow_mode and services.sim_info_manager().get(_sim_id) is None:
+                if _follow_mode and services.sim_info_manager().get(
+                        _sim_id) is None:
                     _sim_id = None
                     _target_position = None
                     _camera_position = None
@@ -44,6 +50,7 @@ def deserialize(client=None):
     _zone_id = None
     return False
 
+
 def serialize(save_slot_data=None):
     if _sim_id is not None and _household_id is not None:
         camera_data = save_slot_data.gameplay_data.camera_data
@@ -58,7 +65,11 @@ def serialize(save_slot_data=None):
         camera_data.zone_id = _zone_id
         camera_data.household_id = _household_id
 
-def update(sim_id=None, target_position=None, camera_position=None, follow_mode=None):
+
+def update(sim_id=None,
+           target_position=None,
+           camera_position=None,
+           follow_mode=None):
     global _sim_id, _target_position, _camera_position, _follow_mode, _zone_id, _household_id
     _sim_id = sim_id
     _target_position = target_position
@@ -67,17 +78,19 @@ def update(sim_id=None, target_position=None, camera_position=None, follow_mode=
     _zone_id = sims4.zone_utils.get_zone_id()
     _household_id = services.active_lot().owner_household_id
 
+
 def focus_on_sim(sim=None, follow=True, client=None):
     focus_sim = sim or client.active_sim
     op = FocusCamera(id=focus_sim.id, follow_mode=follow)
     Distributor.instance().add_op_with_no_owner(op)
+
 
 def focus_on_position(pos, client=None):
     op = FocusCamera()
     op.set_location(pos)
     Distributor.instance().add_op_with_no_owner(op)
 
+
 def set_to_default():
     op = FocusCamera(id=0)
     Distributor.instance().add_op_with_no_owner(op)
-

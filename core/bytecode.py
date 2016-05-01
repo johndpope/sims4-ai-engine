@@ -13,9 +13,16 @@ OP_SETUP_EXCEPT = opcode.opmap['SETUP_EXCEPT']
 OP_SETUP_WITH = opcode.opmap['SETUP_WITH']
 OP_END_FINALLY = opcode.opmap['END_FINALLY']
 CMP_EXCEPTION_MATCH = opcode.cmp_op.index('exception match')
-PATTERN_EX_HANDLER = [(OP_DUP_TOP,), (OP_LOAD_GLOBAL, 'global_index'), (OP_LOAD_ATTR, 'attr_indices'), '*', (OP_COMPARE, CMP_EXCEPTION_MATCH), (OP_POP_JMP_IF_FALSE, 'else_target'), (OP_POP_TOP,), (OP_POP_TOP,), (OP_POP_TOP,)]
-BLOCK_OPS = {OP_SETUP_EXCEPT: OP_END_FINALLY, OP_SETUP_FINALLY: OP_END_FINALLY, OP_SETUP_WITH: OP_END_FINALLY}
+PATTERN_EX_HANDLER = [(OP_DUP_TOP, ), (OP_LOAD_GLOBAL, 'global_index'),
+                      (OP_LOAD_ATTR, 'attr_indices'), '*',
+                      (OP_COMPARE, CMP_EXCEPTION_MATCH),
+                      (OP_POP_JMP_IF_FALSE, 'else_target'), (OP_POP_TOP, ),
+                      (OP_POP_TOP, ), (OP_POP_TOP, )]
+BLOCK_OPS = {OP_SETUP_EXCEPT: OP_END_FINALLY,
+             OP_SETUP_FINALLY: OP_END_FINALLY,
+             OP_SETUP_WITH: OP_END_FINALLY}
 QUANTIFIERS = {'*': (0, None), '+': (1, None), '?': (0, 1)}
+
 
 class HandlerInfo:
     __qualname__ = 'HandlerInfo'
@@ -31,7 +38,8 @@ class HandlerInfo:
         elif issubclass(exc, BaseException):
             exc_type = exc
         else:
-            raise ValueError("Unexpected exc '{}' (type: {})".format(exc, type(exc)))
+            raise ValueError("Unexpected exc '{}' (type: {})".format(exc, type(
+                exc)))
         for sub_exc_type in exc_type.__mro__:
             while sub_exc_type.__name__ in self.exceptions:
                 return True
@@ -44,6 +52,7 @@ class HandlerInfo:
 
     def __repr__(self):
         return 'HandlerInfo({})'.format(self.exceptions)
+
 
 def get_handled_exceptions(co, line, include_finally=False, include_with=True):
     offset = get_offset_for_line(co, line)
@@ -64,6 +73,7 @@ def get_handled_exceptions(co, line, include_finally=False, include_with=True):
                 handled.update(filters)
     return HandlerInfo(handled or ())
 
+
 def get_offset_for_line(co, line):
     for (offset, l) in dis.findlinestarts(co):
         if l == line:
@@ -71,6 +81,7 @@ def get_offset_for_line(co, line):
         while l > line:
             break
     return -1
+
 
 def get_exception_filters(co, begin, end):
     code = co.co_code
@@ -91,6 +102,7 @@ def get_exception_filters(co, begin, end):
         return ALL_EXCEPTIONS
     return filters
 
+
 def get_exception_blocks(code, begin=0, end=None):
     block_stack = []
     blocks = []
@@ -105,8 +117,10 @@ def get_exception_blocks(code, begin=0, end=None):
                     block_stack.pop()
                     blocks.append((open_op, open_index, open_dest, next_ip))
     if block_stack:
-        raise ValueError('Block stack contains {} additional items'.format(len(block_stack)))
+        raise ValueError('Block stack contains {} additional items'.format(len(
+            block_stack)))
     return blocks
+
 
 def match_bytecode(code, pattern, begin=0, end=None):
     bytecode = bytecode_gen(code, begin=begin, end=end)
@@ -130,7 +144,8 @@ def match_bytecode(code, pattern, begin=0, end=None):
                 if not match and not advance:
                     return
                 while advance:
-                    (p_op, p_op_token, p_oparg, p_oparg_token, min_match, max_match) = next(pg)
+                    (p_op, p_op_token, p_oparg, p_oparg_token, min_match,
+                     max_match) = next(pg)
                     current_match = 0
                     continue
         except StopIteration:
@@ -145,9 +160,11 @@ def match_bytecode(code, pattern, begin=0, end=None):
             return
         if oparg is None:
             if p_oparg is not None or p_oparg_token is not None:
-                raise ValueError('Opcode {} cannot have an argument'.format(opcode.opname[op]))
+                raise ValueError('Opcode {} cannot have an argument'.format(
+                    opcode.opname[op]))
                 if p_oparg is None and p_oparg_token is None:
-                    raise ValueError('Opcode {} requires an argument'.format(opcode.opname[op]))
+                    raise ValueError('Opcode {} requires an argument'.format(
+                        opcode.opname[op]))
                 if p_oparg_token is not None:
                     value = dest or oparg
                     if max_match is None or max_match > 1:
@@ -158,7 +175,8 @@ def match_bytecode(code, pattern, begin=0, end=None):
                     return
         else:
             if p_oparg is None and p_oparg_token is None:
-                raise ValueError('Opcode {} requires an argument'.format(opcode.opname[op]))
+                raise ValueError('Opcode {} requires an argument'.format(
+                    opcode.opname[op]))
             if p_oparg_token is not None:
                 value = dest or oparg
                 if max_match is None or max_match > 1:
@@ -168,6 +186,7 @@ def match_bytecode(code, pattern, begin=0, end=None):
             while p_oparg is not None and p_oparg != oparg:
                 return
     return results
+
 
 def pattern_gen(pattern):
     i = 0
@@ -182,7 +201,8 @@ def pattern_gen(pattern):
         elif l == 2:
             (op, oparg) = entry
         else:
-            raise AssertionError('Entry {} does not contain 1 or 2 elements'.format(entry))
+            raise AssertionError(
+                'Entry {} does not contain 1 or 2 elements'.format(entry))
         if i < n and pattern[i] in QUANTIFIERS:
             q = pattern[i]
             i = i + 1
@@ -193,10 +213,12 @@ def pattern_gen(pattern):
         (oparg, oparg_token) = _to_token(oparg)
         yield (op, op_token, oparg, oparg_token, min_match, max_match)
 
+
 def _to_token(entry):
     if isinstance(entry, str):
         return (None, entry)
     return (entry, None)
+
 
 def pattern_entry_match(op, oparg, p_op, p_oparg):
     if p_op is not None and p_op != op:
@@ -204,6 +226,7 @@ def pattern_entry_match(op, oparg, p_op, p_oparg):
     if p_oparg is not None and p_oparg != oparg:
         return False
     return True
+
 
 def bytecode_gen(code, begin=0, end=None):
     i = begin
@@ -218,7 +241,7 @@ def bytecode_gen(code, begin=0, end=None):
         if op < dis.HAVE_ARGUMENT:
             yield (index, i, op, None, None)
         else:
-            oparg = code[i] + code[i + 1]*256
+            oparg = code[i] + code[i + 1] * 256
             i = i + 2
             dest = None
             if op in dis.hasjrel:
@@ -226,4 +249,3 @@ def bytecode_gen(code, begin=0, end=None):
             elif op in dis.hasjabs:
                 dest = oparg
             yield (index, i, op, oparg, dest)
-

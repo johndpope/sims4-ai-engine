@@ -11,10 +11,11 @@ with sims4.reload.protected(globals()):
     MINUTES_PER_HOUR = 60
     HOURS_PER_DAY = 24
     DAYS_PER_WEEK = 7
-    SECONDS_PER_HOUR = SECONDS_PER_MINUTE*MINUTES_PER_HOUR
-    SECONDS_PER_DAY = SECONDS_PER_HOUR*HOURS_PER_DAY
-    SECONDS_PER_WEEK = SECONDS_PER_DAY*DAYS_PER_WEEK
+    SECONDS_PER_HOUR = SECONDS_PER_MINUTE * MINUTES_PER_HOUR
+    SECONDS_PER_DAY = SECONDS_PER_HOUR * HOURS_PER_DAY
+    SECONDS_PER_WEEK = SECONDS_PER_DAY * DAYS_PER_WEEK
     INVALID_TIME = MAX_UINT64
+
 
 class TimeUnit(enum.Int):
     __qualname__ = 'TimeUnit'
@@ -24,14 +25,19 @@ class TimeUnit(enum.Int):
     DAYS = 3
     WEEKS = 4
 
+
 def send_clock_tuning():
-    sims4.commands.execute('clock._set_milliseconds_per_sim_second {0}'.format(get_real_milliseconds_per_sim_second()), None)
+    sims4.commands.execute('clock._set_milliseconds_per_sim_second {0}'.format(
+        get_real_milliseconds_per_sim_second()), None)
+
 
 def sim_ticks_per_day():
-    return get_real_milliseconds_per_sim_second()*SECONDS_PER_DAY
+    return get_real_milliseconds_per_sim_second() * SECONDS_PER_DAY
+
 
 def sim_ticks_per_week():
-    return get_real_milliseconds_per_sim_second()*SECONDS_PER_WEEK
+    return get_real_milliseconds_per_sim_second() * SECONDS_PER_WEEK
+
 
 class DateAndTime(int):
     __qualname__ = 'DateAndTime'
@@ -41,34 +47,35 @@ class DateAndTime(int):
         return int(self.absolute_seconds() % SECONDS_PER_MINUTE)
 
     def minute(self):
-        return int(self.absolute_seconds()/SECONDS_PER_MINUTE % MINUTES_PER_HOUR)
+        return int(self.absolute_seconds() / SECONDS_PER_MINUTE %
+                   MINUTES_PER_HOUR)
 
     def hour(self):
-        return int(self.absolute_seconds()/SECONDS_PER_HOUR % HOURS_PER_DAY)
+        return int(self.absolute_seconds() / SECONDS_PER_HOUR % HOURS_PER_DAY)
 
     def day(self):
-        return int(self.absolute_seconds()/SECONDS_PER_DAY % DAYS_PER_WEEK)
+        return int(self.absolute_seconds() / SECONDS_PER_DAY % DAYS_PER_WEEK)
 
     def week(self):
-        return int(self.absolute_seconds()/SECONDS_PER_WEEK)
+        return int(self.absolute_seconds() / SECONDS_PER_WEEK)
 
     def absolute_ticks(self):
         return int(self)
 
     def absolute_seconds(self):
-        return int(self)/get_real_milliseconds_per_sim_second()
+        return int(self) / get_real_milliseconds_per_sim_second()
 
     def absolute_minutes(self):
-        return self.absolute_seconds()/SECONDS_PER_MINUTE
+        return self.absolute_seconds() / SECONDS_PER_MINUTE
 
     def absolute_hours(self):
-        return self.absolute_seconds()/SECONDS_PER_HOUR
+        return self.absolute_seconds() / SECONDS_PER_HOUR
 
     def absolute_days(self):
-        return self.absolute_seconds()/SECONDS_PER_DAY
+        return self.absolute_seconds() / SECONDS_PER_DAY
 
     def absolute_weeks(self):
-        return self.absolute_seconds()/SECONDS_PER_WEEK
+        return self.absolute_seconds() / SECONDS_PER_WEEK
 
     def _ticks_in_day(self):
         return int(self) % sim_ticks_per_day()
@@ -85,15 +92,20 @@ class DateAndTime(int):
     def time_of_next_week_time(self, time_of_week):
         return self + self.time_to_week_time(time_of_week)
 
-    def time_till_timespan_of_week(self, start_time_of_week, optional_end_time=None, min_duration_remaining=None):
+    def time_till_timespan_of_week(self,
+                                   start_time_of_week,
+                                   optional_end_time=None,
+                                   min_duration_remaining=None):
         ticks_in_week = self._ticks_in_week()
         tick_diff = start_time_of_week.absolute_ticks() - ticks_in_week
         if tick_diff > 0:
             return TimeSpan(tick_diff)
         if optional_end_time is not None:
-            tick_diff_before_end = optional_end_time.absolute_ticks() - ticks_in_week
+            tick_diff_before_end = optional_end_time.absolute_ticks(
+            ) - ticks_in_week
             if tick_diff_before_end > 0:
-                if min_duration_remaining is None or tick_diff_before_end >= min_duration_remaining.in_ticks():
+                if min_duration_remaining is None or tick_diff_before_end >= min_duration_remaining.in_ticks(
+                ):
                     return TimeSpan.ZERO
         end_of_week = sim_ticks_per_week() - self._ticks_in_week()
         return TimeSpan(end_of_week + start_time_of_week.absolute_ticks())
@@ -131,7 +143,8 @@ class DateAndTime(int):
         return TimeSpan(time_till_next_day_time)
 
     def time_since_beginning_of_week(self):
-        return self + TimeSpan(SECONDS_PER_WEEK*-self.week()*get_real_milliseconds_per_sim_second())
+        return self + TimeSpan(SECONDS_PER_WEEK * -self.week() *
+                               get_real_milliseconds_per_sim_second())
 
     def __sub__(self, other):
         return TimeSpan(int.__sub__(self, other))
@@ -143,8 +156,11 @@ class DateAndTime(int):
         return 'DateAndTime({0:d})'.format(self)
 
     def __str__(self):
-        ms = int(self.absolute_seconds()*MILLISECONDS_PER_SECOND % MILLISECONDS_PER_SECOND)
-        return '{0:02}:{1:02}:{2:02}.{3:03} day:{4} week:{5}'.format(self.hour(), self.minute(), self.second(), ms, self.day(), self.week())
+        ms = int(self.absolute_seconds() * MILLISECONDS_PER_SECOND %
+                 MILLISECONDS_PER_SECOND)
+        return '{0:02}:{1:02}:{2:02}.{3:03} day:{4} week:{5}'.format(
+            self.hour(), self.minute(), self.second(), ms, self.day(),
+            self.week())
 
     def populate_localization_token(self, token):
         loc_data = LocalizedDateAndTimeData()
@@ -160,12 +176,14 @@ class DateAndTime(int):
         token.type = LocalizedStringToken.DATE_AND_TIME
         token.date_and_time = loc_data
 
+
 DATE_AND_TIME_ZERO = DateAndTime(0)
 INVALID_DATE_AND_TIME = DateAndTime(INVALID_TIME)
 
+
 class TimeSpan:
     __qualname__ = 'TimeSpan'
-    __slots__ = ('_delta',)
+    __slots__ = ('_delta', )
 
     def __init__(self, delta):
         self._delta = math.ceil(delta)
@@ -178,22 +196,22 @@ class TimeSpan:
         return self._delta
 
     def in_seconds(self):
-        return self._delta/get_real_milliseconds_per_sim_second()
+        return self._delta / get_real_milliseconds_per_sim_second()
 
     def in_minutes(self):
-        return self.in_seconds()/SECONDS_PER_MINUTE
+        return self.in_seconds() / SECONDS_PER_MINUTE
 
     def in_hours(self):
-        return self.in_seconds()/SECONDS_PER_HOUR
+        return self.in_seconds() / SECONDS_PER_HOUR
 
     def in_days(self):
-        return self.in_seconds()/SECONDS_PER_DAY
+        return self.in_seconds() / SECONDS_PER_DAY
 
     def in_weeks(self):
-        return self.in_seconds()/SECONDS_PER_WEEK
+        return self.in_seconds() / SECONDS_PER_WEEK
 
     def in_real_world_seconds(self):
-        return self._delta/TICKS_PER_REAL_WORLD_SECOND
+        return self._delta / TICKS_PER_REAL_WORLD_SECOND
 
     def __add__(self, other):
         return TimeSpan(self._delta + other._delta)
@@ -202,10 +220,10 @@ class TimeSpan:
         return TimeSpan(self._delta - other._delta)
 
     def __mul__(self, other):
-        return TimeSpan(self._delta*other)
+        return TimeSpan(self._delta * other)
 
     def __truediv__(self, other):
-        return TimeSpan(self._delta/other)
+        return TimeSpan(self._delta / other)
 
     def __cmp__(self, other):
         return self._delta - other._delta
@@ -238,18 +256,25 @@ class TimeSpan:
         abs_delta = abs(self.in_seconds())
         if abs_delta < SECONDS_PER_MINUTE:
             return '{0:.2f} seconds'.format(self.in_seconds())
-        if abs_delta < SECONDS_PER_MINUTE*MINUTES_PER_HOUR:
+        if abs_delta < SECONDS_PER_MINUTE * MINUTES_PER_HOUR:
             return '{0:.2f} minutes'.format(self.in_minutes())
-        if abs_delta < SECONDS_PER_MINUTE*MINUTES_PER_HOUR*HOURS_PER_DAY:
+        if abs_delta < SECONDS_PER_MINUTE * MINUTES_PER_HOUR * HOURS_PER_DAY:
             return '{0:.2f} hours'.format(self.in_hours())
-        if abs_delta < SECONDS_PER_MINUTE*MINUTES_PER_HOUR*HOURS_PER_DAY*DAYS_PER_WEEK:
+        if abs_delta < SECONDS_PER_MINUTE * MINUTES_PER_HOUR * HOURS_PER_DAY * DAYS_PER_WEEK:
             return '{0:.2f} days'.format(self.in_days())
         return '{0:.2f} weeks'.format(self.in_weeks())
+
 
 TimeSpan.ZERO = TimeSpan(0)
 TimeSpan.ONE = TimeSpan(1)
 DEFAULT_REAL_MILLISECONDS_PER_SIM_SECOND = 25
-REAL_MILLISECONDS_PER_SIM_SECOND = sims4.tuning.tunable.Tunable(description='\n    The number of real world milliseconds that represent one sim second.\n    This affects the speed of things that happen in the simulation time,\n    such as motive decay and skill gain.\n    ', tunable_type=int, default=DEFAULT_REAL_MILLISECONDS_PER_SIM_SECOND, export_modes=sims4.tuning.tunable_base.ExportModes.All)
+REAL_MILLISECONDS_PER_SIM_SECOND = sims4.tuning.tunable.Tunable(
+    description=
+    '\n    The number of real world milliseconds that represent one sim second.\n    This affects the speed of things that happen in the simulation time,\n    such as motive decay and skill gain.\n    ',
+    tunable_type=int,
+    default=DEFAULT_REAL_MILLISECONDS_PER_SIM_SECOND,
+    export_modes=sims4.tuning.tunable_base.ExportModes.All)
+
 
 def get_real_milliseconds_per_sim_second():
     real_millisecond_per_sim_second = DEFAULT_REAL_MILLISECONDS_PER_SIM_SECOND
@@ -257,35 +282,40 @@ def get_real_milliseconds_per_sim_second():
         real_millisecond_per_sim_second = REAL_MILLISECONDS_PER_SIM_SECOND
     return real_millisecond_per_sim_second
 
+
 def create_date_and_time(days=0, hours=0, minutes=0):
-    num_sim_seconds = days*SECONDS_PER_DAY + hours*SECONDS_PER_HOUR + minutes*SECONDS_PER_MINUTE
-    time_in_ticks = num_sim_seconds*get_real_milliseconds_per_sim_second()
+    num_sim_seconds = days * SECONDS_PER_DAY + hours * SECONDS_PER_HOUR + minutes * SECONDS_PER_MINUTE
+    time_in_ticks = num_sim_seconds * get_real_milliseconds_per_sim_second()
     return DateAndTime(time_in_ticks)
 
+
 def create_time_span(days=0, hours=0, minutes=0):
-    num_sim_seconds = days*SECONDS_PER_DAY + hours*SECONDS_PER_HOUR + minutes*SECONDS_PER_MINUTE
-    time_in_ticks = num_sim_seconds*get_real_milliseconds_per_sim_second()
+    num_sim_seconds = days * SECONDS_PER_DAY + hours * SECONDS_PER_HOUR + minutes * SECONDS_PER_MINUTE
+    time_in_ticks = num_sim_seconds * get_real_milliseconds_per_sim_second()
     return TimeSpan(time_in_ticks)
 
+
 def date_and_time_from_week_time(num_weeks, week_time):
-    total_ticks = num_weeks*sim_ticks_per_week() + week_time.absolute_ticks()
+    total_ticks = num_weeks * sim_ticks_per_week() + week_time.absolute_ticks()
     return DateAndTime(total_ticks)
+
 
 def ticks_to_time_unit(ticks, time_unit, use_sim_time):
     if use_sim_time:
-        seconds = ticks/get_real_milliseconds_per_sim_second()
+        seconds = ticks / get_real_milliseconds_per_sim_second()
     else:
-        seconds = ticks/TICKS_PER_REAL_WORLD_SECOND
+        seconds = ticks / TICKS_PER_REAL_WORLD_SECOND
     if time_unit is TimeUnit.SECONDS:
         return seconds
     if time_unit is TimeUnit.MINUTES:
-        return seconds/SECONDS_PER_MINUTE
+        return seconds / SECONDS_PER_MINUTE
     if time_unit is TimeUnit.HOURS:
-        return seconds/SECONDS_PER_HOUR
+        return seconds / SECONDS_PER_HOUR
     if time_unit is TimeUnit.DAYS:
-        return seconds/SECONDS_PER_DAY
+        return seconds / SECONDS_PER_DAY
     if time_unit is TimeUnit.WEEKS:
-        return seconds/SECONDS_PER_WEEK
+        return seconds / SECONDS_PER_WEEK
+
 
 if __name__ == '__main__':
     import doctest

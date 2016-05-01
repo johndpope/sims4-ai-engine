@@ -8,11 +8,14 @@ ACCEPTABLE_GARBAGE = 100
 MAX_ELEMENTS = 10000
 logger = sims4.log.Logger('Scheduling')
 
+
 class HardStopError(BaseException):
     __qualname__ = 'HardStopError'
 
+
 def raise_exception(timeline, element, exception, message):
     raise exception
+
 
 class Timeline:
     __qualname__ = 'Timeline'
@@ -48,14 +51,15 @@ class Timeline:
 
     def simulate(self, until, max_elements=MAX_ELEMENTS, max_time_ms=None):
         if until < self.future:
-            logger.error('Simulating past time. until: {}, future: {}', until, self.future)
+            logger.error('Simulating past time. until: {}, future: {}', until,
+                         self.future)
             return True
         count = 0
         self.future = until
         self.per_simulate_callbacks()
         if max_time_ms is not None:
             start_time = time.monotonic()
-            end_time = start_time + max_time_ms/1000
+            end_time = start_time + max_time_ms / 1000
         else:
             end_time = None
         early_exit = False
@@ -82,17 +86,23 @@ class Timeline:
                             else:
                                 result = e._resume(self, result)
                             while self._pending_hard_stop:
-                                raise HardStopError('Hard stop exception was consumed by {}'.format(e))
+                                raise HardStopError(
+                                    'Hard stop exception was consumed by {}'.format(
+                                        e))
                         except BaseException as exc:
                             self._pending_hard_stop = False
                             self._active = None
                             try:
-                                self._report_exception(e, exc, 'Exception {} Element'.format('running' if calling else 'resuming'))
+                                self._report_exception(
+                                    e, exc, 'Exception {} Element'.format(
+                                        'running' if calling else 'resuming'))
                             finally:
                                 if e._parent_handle is not None:
                                     self.hard_stop(e._parent_handle)
                         if inspect.isgenerator(result):
-                            raise RuntimeError('Element {} returned a generator {}'.format(e, result))
+                            raise RuntimeError(
+                                'Element {} returned a generator {}'.format(
+                                    e, result))
                         if self._active is None:
                             break
                         if self._child is not None:
@@ -124,7 +134,8 @@ class Timeline:
                     early_exit = True
                     break
                     continue
-        if self._garbage > ACCEPTABLE_GARBAGE and self._garbage > len(self.heap)*MAX_GARBAGE_FACTOR:
+        if self._garbage > ACCEPTABLE_GARBAGE and self._garbage > len(
+                self.heap) * MAX_GARBAGE_FACTOR:
             self._clear_garbage()
         if not early_exit:
             if self.now != until:
@@ -157,7 +168,9 @@ class Timeline:
     def run_child(self, element):
         parent = self._active[0]
         if self._pending_hard_stop:
-            raise HardStopError('Attempting to run a child element {} while a hard stop is pending for {}'.format(element, parent))
+            raise HardStopError(
+                'Attempting to run a child element {} while a hard stop is pending for {}'.format(
+                    element, parent))
         handle = ElementHandle(None, None, self, True, element)
         element._element_handle = handle
         parent._child_scheduled(self, handle)
@@ -167,7 +180,9 @@ class Timeline:
     def schedule_child(self, element, when):
         parent = self._active[0]
         if self._pending_hard_stop:
-            raise HardStopError('Attempting to schedule a child element {} while a hard stop is pending for {}'.format(element, parent))
+            raise HardStopError(
+                'Attempting to schedule a child element {} while a hard stop is pending for {}'.format(
+                    element, parent))
         handle = ElementHandle(when, self._ix, self, True, element)
         element._element_handle = handle
         parent._child_scheduled(self, handle)
@@ -176,7 +191,9 @@ class Timeline:
 
     def reschedule(self, handle, when):
         if self._pending_hard_stop:
-            raise HardStopError('Attempting to reschedule the active element {} while a hard stop is pending'.format(handle.element))
+            raise HardStopError(
+                'Attempting to reschedule the active element {} while a hard stop is pending'.format(
+                    handle.element))
         if handle.when == when:
             return
         index = self.heap.index(handle)
@@ -209,7 +226,8 @@ class Timeline:
         self._stop_element_tree(handle)
 
     def get_sub_timeline(self):
-        sub_timeline = Timeline(self.now, exception_reporter=self._exception_reporter)
+        sub_timeline = Timeline(self.now,
+                                exception_reporter=self._exception_reporter)
         return sub_timeline
 
     def get_current_element(self):
@@ -225,7 +243,8 @@ class Timeline:
             try:
                 element._teardown()
             except BaseException as exc:
-                self._report_exception(element, exc, 'Exception during element teardown.')
+                self._report_exception(element, exc,
+                                       'Exception during element teardown.')
             finally:
                 element._element_handle = None
 
@@ -236,13 +255,16 @@ class Timeline:
             for handle in to_stop_handles:
                 while handle is active_handle:
                     self._pending_hard_stop = True
-                    raise HardStopError('Attempting to stop active handle to element {}'.format(handle.element))
+                    raise HardStopError(
+                        'Attempting to stop active handle to element {}'.format(
+                            handle.element))
         elements = [handle.element for handle in to_stop_handles]
         for handle in to_stop_handles:
             handle._clear_element()
         for element in elements:
             while self._active is not None:
-                if self._active[1] is element._element_handle or self._active[0] is element:
+                if self._active[1] is element._element_handle or self._active[
+                        0] is element:
                     self._active = None
         exceptions = []
         for element in elements:
@@ -254,7 +276,8 @@ class Timeline:
                 element._element_handle = None
         for exc in exceptions:
             while not isinstance(exc, HardStopError):
-                self._report_exception(element, exc, 'Exception hard-stopping element')
+                self._report_exception(element, exc,
+                                       'Exception hard-stopping element')
 
     def _collect_element_tree(self, handle):
         root = handle
@@ -281,13 +304,15 @@ class Timeline:
 
     def _clear_garbage(self):
         old_queue = self.heap
-        self.heap = [handle for handle in old_queue if handle.element is not None]
+        self.heap = [handle for handle in old_queue
+                     if handle.element is not None]
         heapq.heapify(self.heap)
         self._garbage = 0
 
     def _report_exception(self, element, exception, message):
         if self._exception_reporter is not None:
             self._exception_reporter(self, element, exception, message)
+
 
 class ElementHandle(list):
     __qualname__ = 'ElementHandle'
@@ -351,4 +376,3 @@ class ElementHandle(list):
     def _clear_element(self):
         self[3] = False
         del self[4]
-

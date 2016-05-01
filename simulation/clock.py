@@ -21,6 +21,7 @@ TELEMETRY_FIELD_TIME_SPENT_IN_SPEED = 'tmsp'
 TELEMETRY_FIELD_PERCENTAGE_TIME_SPENT_IN_SPEED = 'pcsp'
 clock_telemetry_writer = sims4.telemetry.TelemetryWriter(TELEMETRY_GROUP_CLOCK)
 
+
 class ClockSpeedMode(enum.Int):
     __qualname__ = 'ClockSpeedMode'
     PAUSED = 0
@@ -29,11 +30,13 @@ class ClockSpeedMode(enum.Int):
     SPEED3 = 3
     INTERACTION_STARTUP_SPEED = 4
 
+
 class GameSpeedChangeSource(enum.Int, export=False):
     __qualname__ = 'GameSpeedChangeSource'
     USER = 0
     GAMEPLAY = 1
     STARTUP = 2
+
 
 def interval_in_real_time(duration, time_unit):
     if time_unit is date_and_time.TimeUnit.SECONDS:
@@ -47,20 +50,30 @@ def interval_in_real_time(duration, time_unit):
     if time_unit is date_and_time.TimeUnit.WEEKS:
         return interval_in_real_weeks(duration)
 
+
 def interval_in_real_seconds(seconds):
-    return TimeSpan(seconds*date_and_time.TICKS_PER_REAL_WORLD_SECOND)
+    return TimeSpan(seconds * date_and_time.TICKS_PER_REAL_WORLD_SECOND)
+
 
 def interval_in_real_minutes(minutes):
-    return TimeSpan(minutes*date_and_time.TICKS_PER_REAL_WORLD_SECOND*date_and_time.SECONDS_PER_MINUTE)
+    return TimeSpan(minutes * date_and_time.TICKS_PER_REAL_WORLD_SECOND *
+                    date_and_time.SECONDS_PER_MINUTE)
+
 
 def interval_in_real_hours(hours):
-    return TimeSpan(hours*date_and_time.TICKS_PER_REAL_WORLD_SECOND*date_and_time.SECONDS_PER_HOUR)
+    return TimeSpan(hours * date_and_time.TICKS_PER_REAL_WORLD_SECOND *
+                    date_and_time.SECONDS_PER_HOUR)
+
 
 def interval_in_real_days(days):
-    return TimeSpan(days*date_and_time.TICKS_PER_REAL_WORLD_SECOND*date_and_time.SECONDS_PER_DAY)
+    return TimeSpan(days * date_and_time.TICKS_PER_REAL_WORLD_SECOND *
+                    date_and_time.SECONDS_PER_DAY)
+
 
 def interval_in_real_weeks(weeks):
-    return TimeSpan(weeks*date_and_time.TICKS_PER_REAL_WORLD_SECOND*date_and_time.SECONDS_PER_WEEK)
+    return TimeSpan(weeks * date_and_time.TICKS_PER_REAL_WORLD_SECOND *
+                    date_and_time.SECONDS_PER_WEEK)
+
 
 def interval_in_sim_time(duration, time_unit):
     if time_unit is date_and_time.TimeUnit.SECONDS:
@@ -74,27 +87,39 @@ def interval_in_sim_time(duration, time_unit):
     if time_unit is date_and_time.TimeUnit.WEEKS:
         return interval_in_sim_weeks(duration)
 
+
 def interval_in_sim_seconds(seconds):
-    return TimeSpan(seconds*date_and_time.get_real_milliseconds_per_sim_second())
+    return TimeSpan(seconds *
+                    date_and_time.get_real_milliseconds_per_sim_second())
+
 
 def interval_in_sim_minutes(minutes):
-    return TimeSpan(date_and_time.SECONDS_PER_MINUTE*minutes*date_and_time.get_real_milliseconds_per_sim_second())
+    return TimeSpan(date_and_time.SECONDS_PER_MINUTE * minutes *
+                    date_and_time.get_real_milliseconds_per_sim_second())
+
 
 def interval_in_sim_hours(hours):
-    return TimeSpan(date_and_time.SECONDS_PER_HOUR*hours*date_and_time.get_real_milliseconds_per_sim_second())
+    return TimeSpan(date_and_time.SECONDS_PER_HOUR * hours *
+                    date_and_time.get_real_milliseconds_per_sim_second())
+
 
 def interval_in_sim_days(days):
-    return TimeSpan(date_and_time.SECONDS_PER_DAY*days*date_and_time.get_real_milliseconds_per_sim_second())
+    return TimeSpan(date_and_time.SECONDS_PER_DAY * days *
+                    date_and_time.get_real_milliseconds_per_sim_second())
+
 
 def interval_in_sim_weeks(weeks):
-    return TimeSpan(date_and_time.SECONDS_PER_WEEK*weeks*date_and_time.get_real_milliseconds_per_sim_second())
+    return TimeSpan(date_and_time.SECONDS_PER_WEEK * weeks *
+                    date_and_time.get_real_milliseconds_per_sim_second())
 
 with sims4.reload.protected(globals()):
     break_point_triggered = False
 
+
 def on_break_point_hook():
     global break_point_triggered
     break_point_triggered = True
+
 
 class Clock:
     __qualname__ = 'Clock'
@@ -109,9 +134,12 @@ class Clock:
     def _unit_test_advance_minutes(self, delta):
         pass
 
+
 class GameClock(Service):
     __qualname__ = 'GameClock'
-    NEW_GAME_START_TIME = TunableTimeOfWeek(description='The time the game starts at when a player starts a new game.')
+    NEW_GAME_START_TIME = TunableTimeOfWeek(
+        description=
+        'The time the game starts at when a player starts a new game.')
     MAX_GAME_CLOCK_TICK_STEP = 5000
     SECONDS_BETWEEN_CLOCK_BROADCAST = 30
     PAUSED_SPEED_MULTIPLIER = 0
@@ -161,24 +189,29 @@ class GameClock(Service):
             scale = self.current_clock_speed_scale()
             diff = absolute_ticks - self._previous_absolute_ticks
             if diff < 0:
-                logger.error('game clock ticking backwards. absolute ticks: {}, previous absolute ticks: {}', absolute_ticks, self._previous_absolute_ticks)
+                logger.error(
+                    'game clock ticking backwards. absolute ticks: {}, previous absolute ticks: {}',
+                    absolute_ticks, self._previous_absolute_ticks)
                 return
             if break_point_triggered:
                 diff = 1
                 self._tick_to_next_message = 0
                 break_point_triggered = False
             if diff > GameClock.MAX_GAME_CLOCK_TICK_STEP:
-                logger.warn('Gameplay clock experienced large server tick step: {}. Ignoring large time step and using {} as tick increment.', diff, GameClock.MAX_GAME_CLOCK_TICK_STEP)
+                logger.warn(
+                    'Gameplay clock experienced large server tick step: {}. Ignoring large time step and using {} as tick increment.',
+                    diff, GameClock.MAX_GAME_CLOCK_TICK_STEP)
                 diff = GameClock.MAX_GAME_CLOCK_TICK_STEP
                 self._tick_to_next_message = 0
-            ideal_tick_increment = diff*scale + self._error_accumulation
+            ideal_tick_increment = diff * scale + self._error_accumulation
             rounded = math.floor(ideal_tick_increment + 0.5)
             error = ideal_tick_increment - rounded
-            self._error_accumulation = self._error_accumulation + sims4.math.clamp(-1, error, 1)
+            self._error_accumulation = self._error_accumulation + sims4.math.clamp(
+                -1, error, 1)
             self._game_clock.set_ticks(rounded + self._game_clock._ticks)
         self._previous_absolute_ticks = absolute_ticks
         if absolute_ticks > self._tick_to_next_message:
-            self._tick_to_next_message = absolute_ticks + self.SECONDS_BETWEEN_CLOCK_BROADCAST*date_and_time.MILLISECONDS_PER_SECOND
+            self._tick_to_next_message = absolute_ticks + self.SECONDS_BETWEEN_CLOCK_BROADCAST * date_and_time.MILLISECONDS_PER_SECOND
             self._sync_clock_and_broadcast_gameclock()
 
     def enter_zone_spin_up(self):
@@ -187,8 +220,9 @@ class GameClock(Service):
         self._sync_clock_and_broadcast_gameclock()
 
     def advance_for_hitting_their_marks(self):
-        loading_clock_speed = self._clock_speed_to_scale(ClockSpeedMode.INTERACTION_STARTUP_SPEED)
-        increment = math.floor(33*loading_clock_speed)
+        loading_clock_speed = self._clock_speed_to_scale(
+            ClockSpeedMode.INTERACTION_STARTUP_SPEED)
+        increment = math.floor(33 * loading_clock_speed)
         self._sync_clock_and_broadcast_gameclock()
 
     def exit_zone_spin_up(self):
@@ -196,17 +230,25 @@ class GameClock(Service):
         self._sync_clock_and_broadcast_gameclock()
 
     def monotonic_time(self):
-        return DateAndTime(self._game_clock._ticks + self._loading_monotonic_ticks)
+        return DateAndTime(self._game_clock._ticks +
+                           self._loading_monotonic_ticks)
 
     def send_update(self):
         self._sync_clock_and_broadcast_gameclock()
 
     def _sync_clock_and_broadcast_gameclock(self):
-        (server_time, monotonic_time, game_time, game_speed, clock_speed, super_speed) = self._get_game_clock_sync_variables()
-        self._broadcast_gameplay_clock_message(server_time, monotonic_time, game_time, game_speed, clock_speed, super_speed)
+        (server_time, monotonic_time, game_time, game_speed, clock_speed,
+         super_speed) = self._get_game_clock_sync_variables()
+        self._broadcast_gameplay_clock_message(
+            server_time, monotonic_time, game_time, game_speed, clock_speed,
+            super_speed)
 
-    def _broadcast_gameplay_clock_message(self, server_time, monotonic_time, game_time, game_speed, clock_speed, super_speed):
-        op = distributor.ops.SetGameTime(server_time, monotonic_time, game_time, game_speed, clock_speed, self._initial_ticks, super_speed)
+    def _broadcast_gameplay_clock_message(self, server_time, monotonic_time,
+                                          game_time, game_speed, clock_speed,
+                                          super_speed):
+        op = distributor.ops.SetGameTime(server_time, monotonic_time,
+                                         game_time, game_speed, clock_speed,
+                                         self._initial_ticks, super_speed)
         distributor.system.Distributor.instance().add_op_with_no_owner(op)
 
     def now(self):
@@ -220,35 +262,48 @@ class GameClock(Service):
         self._pause_requests.remove(pause_source_name)
         self._sync_clock_and_broadcast_gameclock()
 
-    def set_clock_speed(self, speed, change_source=GameSpeedChangeSource.GAMEPLAY) -> bool:
+    def set_clock_speed(self,
+                        speed,
+                        change_source=GameSpeedChangeSource.GAMEPLAY) -> bool:
         if speed is None or speed < 0 or speed > ClockSpeedMode.INTERACTION_STARTUP_SPEED:
-            logger.error('Attempting to set clock speed to something invalid: {}', speed)
+            logger.error(
+                'Attempting to set clock speed to something invalid: {}',
+                speed)
             return False
-        logger.debug('set_clock_speed CALLED ...\n    speed: {}, change_source: {}', speed, change_source)
+        logger.debug(
+            'set_clock_speed CALLED ...\n    speed: {}, change_source: {}',
+            speed, change_source)
         if self._pause_requests:
             return False
-        if change_source == GameSpeedChangeSource.USER and not services.current_zone().is_zone_running:
+        if change_source == GameSpeedChangeSource.USER and not services.current_zone(
+        ).is_zone_running:
             logger.debug("set_clock_speed FAILED\n    zone isn't running")
             return False
         if change_source == GameSpeedChangeSource.GAMEPLAY and self._clock_speed == ClockSpeedMode.PAUSED and speed != ClockSpeedMode.PAUSED:
             if self._previous_non_pause_speed > speed:
                 self._previous_non_pause_speed = speed
-            logger.debug('set_clock_speed SUCCEEDED\n    gameplay request to bring game out of PAUSED. caching for the unpause.')
+            logger.debug(
+                'set_clock_speed SUCCEEDED\n    gameplay request to bring game out of PAUSED. caching for the unpause.')
             return True
         if speed != self._clock_speed:
             if self._clock_speed != ClockSpeedMode.INTERACTION_STARTUP_SPEED and self._clock_speed != ClockSpeedMode.PAUSED:
                 self._previous_non_pause_speed = self._clock_speed
             self._update_time_spent_in_speed(self._clock_speed)
         if speed == ClockSpeedMode.NORMAL:
-            self._set_clock_speed_multiplier_type(ClockSpeedMultiplierType.DEFAULT)
-        (server_time, monotonic_time, game_time, _, _, _) = self._get_game_clock_sync_variables()
+            self._set_clock_speed_multiplier_type(
+                ClockSpeedMultiplierType.DEFAULT)
+        (server_time, monotonic_time, game_time, _, _,
+         _) = self._get_game_clock_sync_variables()
         self._clock_speed = speed
         ss3_service = services.get_super_speed_three_service()
         ss3_service.update()
         in_ss3 = ss3_service.in_super_speed_three_mode()
         game_speed = self.current_clock_speed_scale()
-        self._broadcast_gameplay_clock_message(server_time, monotonic_time, game_time, game_speed, self._clock_speed, in_ss3)
-        logger.debug('set_clock_speed SUCCEEDED. speed: {}, change_source: {}', speed, change_source)
+        self._broadcast_gameplay_clock_message(server_time, monotonic_time,
+                                               game_time, game_speed,
+                                               self._clock_speed, in_ss3)
+        logger.debug('set_clock_speed SUCCEEDED. speed: {}, change_source: {}',
+                     speed, change_source)
         return True
 
     def previous_non_pause_speed(self):
@@ -268,20 +323,26 @@ class GameClock(Service):
         if clock_speed == ClockSpeedMode.NORMAL:
             return self.NORMAL_SPEED_MULTIPLIER
         if clock_speed == ClockSpeedMode.SPEED2:
-            return ClockSpeedMultipliers.speed_two_multiplier(self.clock_speed_multiplier_type)
+            return ClockSpeedMultipliers.speed_two_multiplier(
+                self.clock_speed_multiplier_type)
         if clock_speed == ClockSpeedMode.SPEED3:
-            if services.get_super_speed_three_service().super_speed_three_active:
-                return ClockSpeedMultipliers.super_speed_three_multiplier(self.clock_speed_multiplier_type)
-            return ClockSpeedMultipliers.speed_three_multiplier(self.clock_speed_multiplier_type)
+            if services.get_super_speed_three_service(
+            ).super_speed_three_active:
+                return ClockSpeedMultipliers.super_speed_three_multiplier(
+                    self.clock_speed_multiplier_type)
+            return ClockSpeedMultipliers.speed_three_multiplier(
+                self.clock_speed_multiplier_type)
         if clock_speed == ClockSpeedMode.INTERACTION_STARTUP_SPEED:
-            return ClockSpeedMultipliers.get_interaction_startup_speed_multiplier()
+            return ClockSpeedMultipliers.get_interaction_startup_speed_multiplier(
+            )
 
     def _get_game_clock_sync_variables(self):
         server_time = services.server_clock_service().ticks()
         if self._interaction_loading:
             game_time = self._loading_monotonic_ticks
             monotonic_time = self._loading_monotonic_ticks
-            game_speed = self._clock_speed_to_scale(ClockSpeedMode.INTERACTION_STARTUP_SPEED)
+            game_speed = self._clock_speed_to_scale(
+                ClockSpeedMode.INTERACTION_STARTUP_SPEED)
             clock_speed = ClockSpeedMode.INTERACTION_STARTUP_SPEED
             super_speed = False
         else:
@@ -289,12 +350,15 @@ class GameClock(Service):
             monotonic_time = game_time + self._loading_monotonic_ticks
             game_speed = self.current_clock_speed_scale()
             clock_speed = self.clock_speed()
-            super_speed = services.get_super_speed_three_service().in_super_speed_three_mode()
-        return (server_time, monotonic_time, game_time, game_speed, clock_speed, super_speed)
+            super_speed = services.get_super_speed_three_service(
+            ).in_super_speed_three_mode()
+        return (server_time, monotonic_time, game_time, game_speed,
+                clock_speed, super_speed)
 
     def on_client_connect(self, client):
         if client.account.save_slot_id is not None:
-            save_slot_data_msg = services.get_persistence_service().get_save_slot_proto_buff()
+            save_slot_data_msg = services.get_persistence_service(
+            ).get_save_slot_proto_buff()
             if save_slot_data_msg.HasField('gameplay_data'):
                 world_game_time = save_slot_data_msg.gameplay_data.world_game_time
                 current_ticks = self.now().absolute_ticks()
@@ -314,23 +378,33 @@ class GameClock(Service):
 
     def restore_saved_clock_speed(self):
         if self._should_restore_saved_client_connect_speed():
-            self.set_clock_speed(self._client_connect_speed, change_source=GameSpeedChangeSource.STARTUP)
+            self.set_clock_speed(self._client_connect_speed,
+                                 change_source=GameSpeedChangeSource.STARTUP)
             self._client_connect_speed = None
         else:
-            self.set_clock_speed(ClockSpeedMode.NORMAL, change_source=GameSpeedChangeSource.STARTUP)
+            self.set_clock_speed(ClockSpeedMode.NORMAL,
+                                 change_source=GameSpeedChangeSource.STARTUP)
         self._sync_clock_and_broadcast_gameclock()
 
     def on_client_disconnect(self, client):
         self._update_time_spent_in_speed(self.clock_speed())
-        total_time_spent = services.server_clock_service().ticks() - self._initial_server_ticks
+        total_time_spent = services.server_clock_service().ticks(
+        ) - self._initial_server_ticks
         for speed in ClockSpeedMode:
             time_spent_in_speed = self._server_ticks_spent_in_speed[speed]
-            precentage_time_in_speed = time_spent_in_speed/float(total_time_spent)*100
-            time_spent_in_speed = time_spent_in_speed/date_and_time.TICKS_PER_REAL_WORLD_SECOND
-            with telemetry_helper.begin_hook(clock_telemetry_writer, TELEMETRY_HOOK_CHANGE_SPEED_REPORT, household=client.household) as hook:
+            precentage_time_in_speed = time_spent_in_speed / float(
+                total_time_spent) * 100
+            time_spent_in_speed = time_spent_in_speed / date_and_time.TICKS_PER_REAL_WORLD_SECOND
+            with telemetry_helper.begin_hook(
+                    clock_telemetry_writer,
+                    TELEMETRY_HOOK_CHANGE_SPEED_REPORT,
+                    household=client.household) as hook:
                 hook.write_int(TELEMETRY_FIELD_CLOCK_SPEED, speed)
-                hook.write_int(TELEMETRY_FIELD_TIME_SPENT_IN_SPEED, time_spent_in_speed)
-                hook.write_float(TELEMETRY_FIELD_PERCENTAGE_TIME_SPENT_IN_SPEED, precentage_time_in_speed)
+                hook.write_int(TELEMETRY_FIELD_TIME_SPENT_IN_SPEED,
+                               time_spent_in_speed)
+                hook.write_float(
+                    TELEMETRY_FIELD_PERCENTAGE_TIME_SPENT_IN_SPEED,
+                    precentage_time_in_speed)
         if GameClock._is_single_player():
             self.set_clock_speed(ClockSpeedMode.PAUSED)
             self._time_of_last_save = self.now()
@@ -342,15 +416,20 @@ class GameClock(Service):
     def set_game_time(self, hours, minutes, seconds):
         current_date_and_time = self.now()
         days = int(current_date_and_time.absolute_days())
-        current_time_minus_days = current_date_and_time - DateAndTime(interval_in_sim_days(days).in_ticks())
-        requested_time = interval_in_sim_hours(hours) + interval_in_sim_minutes(minutes) + interval_in_sim_seconds(seconds)
+        current_time_minus_days = current_date_and_time - DateAndTime(
+            interval_in_sim_days(days).in_ticks())
+        requested_time = interval_in_sim_hours(
+            hours) + interval_in_sim_minutes(
+                minutes) + interval_in_sim_seconds(seconds)
         time_difference = requested_time - current_time_minus_days
         if time_difference.in_hours() < 0:
             time_difference = time_difference + interval_in_sim_hours(24)
         self._add_to_game_time_and_send_update(time_difference.in_ticks())
 
     def advance_game_time(self, hours=0, minutes=0, seconds=0):
-        requested_increment = interval_in_sim_hours(hours) + interval_in_sim_minutes(minutes) + interval_in_sim_seconds(seconds)
+        requested_increment = interval_in_sim_hours(
+            hours) + interval_in_sim_minutes(
+                minutes) + interval_in_sim_seconds(seconds)
         self._add_to_game_time_and_send_update(requested_increment.in_ticks())
 
     def _add_to_game_time_and_send_update(self, time_difference_in_ticks):
@@ -364,8 +443,10 @@ class GameClock(Service):
         if not sim.sim_info.is_npc:
             self._sim_game_speed_requests[sim.id] = game_speed_params
             lowest_requested_speed = game_speed
-            for sim_in_household in sim.household.instanced_sims_gen(allow_hidden_flags=ALL_HIDDEN_REASONS):
-                speed_params = self._sim_game_speed_requests.get(sim_in_household.id)
+            for sim_in_household in sim.household.instanced_sims_gen(
+                    allow_hidden_flags=ALL_HIDDEN_REASONS):
+                speed_params = self._sim_game_speed_requests.get(
+                    sim_in_household.id)
                 if speed_params is not None:
                     (speed, _) = speed_params
                     if speed < lowest_requested_speed:
@@ -377,7 +458,9 @@ class GameClock(Service):
             self.set_clock_speed(lowest_requested_speed)
 
     def stop_super_speed_three(self):
-        for (sim_id, (speed, ss3_requested)) in tuple(self._sim_game_speed_requests.items()):
+        for (sim_id,
+             (speed,
+              ss3_requested)) in tuple(self._sim_game_speed_requests.items()):
             while ss3_requested:
                 self._sim_game_speed_requests[sim_id] = (speed, False)
         services.get_super_speed_three_service().update()
@@ -386,7 +469,8 @@ class GameClock(Service):
         if sim_id in self._sim_game_speed_requests:
             sim_info = services.sim_info_manager().get(sim_id)
             if sim_info is not None:
-                for sim_in_household in sim_info.household.instanced_sims_gen(allow_hidden_flags=ALL_HIDDEN_REASONS):
+                for sim_in_household in sim_info.household.instanced_sims_gen(
+                        allow_hidden_flags=ALL_HIDDEN_REASONS):
                     while sim_in_household.id not in self._sim_game_speed_requests:
                         break
                 if self.clock_speed() > ClockSpeedMode.NORMAL:
@@ -400,7 +484,8 @@ class GameClock(Service):
     def _update_time_spent_in_speed(self, current_speed):
         server_time = services.server_clock_service().ticks()
         server_ticks_spent_in_current_speed = server_time - self._last_speed_change_server_time
-        self._server_ticks_spent_in_speed[current_speed] += server_ticks_spent_in_current_speed
+        self._server_ticks_spent_in_speed[
+            current_speed] += server_ticks_spent_in_current_speed
         self._last_speed_change_server_time = server_time
 
     def time_until_hour_of_day(self, hour_of_day):
@@ -415,9 +500,11 @@ class GameClock(Service):
         cur_hour = self.now().hour()
         cur_day = int(self.now().absolute_days())
         if cur_hour < hour_of_day:
-            future = date_and_time.create_date_and_time(days=cur_day, hours=hour_of_day)
+            future = date_and_time.create_date_and_time(days=cur_day,
+                                                        hours=hour_of_day)
         else:
-            future = date_and_time.create_date_and_time(days=cur_day + 1, hours=hour_of_day)
+            future = date_and_time.create_date_and_time(days=cur_day + 1,
+                                                        hours=hour_of_day)
         return future - self.now()
 
     def save(self, zone_data=None, save_slot_data=None, **kwargs):
@@ -435,7 +522,8 @@ class GameClock(Service):
         if gameplay_zone_data is None:
             return
         world_game_time = self._initial_ticks
-        if save_slot_data is not None and save_slot_data.HasField('gameplay_data'):
+        if save_slot_data is not None and save_slot_data.HasField(
+                'gameplay_data'):
             world_game_time = save_slot_data.gameplay_data.world_game_time
             self._zone_init_world_game_time = DateAndTime(world_game_time)
         initial_time = world_game_time
@@ -444,14 +532,17 @@ class GameClock(Service):
             tick_diff = world_game_time - saved_ticks
             time_diff = TimeSpan(tick_diff)
             self._time_of_last_save = DateAndTime(saved_ticks)
-            if time_diff.in_minutes() < PersistenceTuning.MAX_LOT_SIMULATE_ELAPSED_TIME:
+            if time_diff.in_minutes(
+            ) < PersistenceTuning.MAX_LOT_SIMULATE_ELAPSED_TIME:
                 initial_time = saved_ticks
             else:
-                max_minutes = date_and_time.create_date_and_time(minutes=PersistenceTuning.MAX_LOT_SIMULATE_ELAPSED_TIME)
+                max_minutes = date_and_time.create_date_and_time(
+                    minutes=PersistenceTuning.MAX_LOT_SIMULATE_ELAPSED_TIME)
                 initial_time = world_game_time - max_minutes.absolute_ticks()
         self._initial_ticks = initial_time
         if gameplay_zone_data.HasField('clock_speed_mode'):
-            self._client_connect_speed = ClockSpeedMode(gameplay_zone_data.clock_speed_mode)
+            self._client_connect_speed = ClockSpeedMode(
+                gameplay_zone_data.clock_speed_mode)
         else:
             self._client_connect_speed = ClockSpeedMode.NORMAL
 
@@ -471,7 +562,8 @@ class GameClock(Service):
     def time_elapsed_since_last_save(self):
         if self._client_connect_world_time is None:
             return TimeSpan.ZERO
-        time_elapsed = self._client_connect_world_time - self.time_of_last_save()
+        time_elapsed = self._client_connect_world_time - self.time_of_last_save(
+        )
         return time_elapsed
 
     def time_has_passed_in_world_since_zone_save(self):
@@ -493,6 +585,7 @@ class GameClock(Service):
         clock_speed = self.clock_speed()
         if clock_speed == ClockSpeedMode.SPEED2 or clock_speed == ClockSpeedMode.SPEED3:
             self.set_clock_speed(clock_speed)
+
 
 class ServerClock(Service):
     __qualname__ = 'ServerClock'
@@ -516,21 +609,54 @@ class ServerClock(Service):
     def ticks(self):
         return self._server_clock._ticks
 
+
 class ClockSpeedMultiplierType(sims4.tuning.dynamic_enum.DynamicEnumLocked):
     __qualname__ = 'ClockSpeedMultiplierType'
     DEFAULT = 0
     LOW_PERFORMANCE = 1
 
+
 class TunableClockSpeedMultipliers(sims4.tuning.tunable.TunableTuple):
     __qualname__ = 'TunableClockSpeedMultipliers'
 
     def __init__(self, **kwargs):
-        super().__init__(speed_two_multiplier=sims4.tuning.tunable.Tunable(description='\n                How much faster speed two goes than normal speed. The game clock will\n                have its speed multiplied by this number.\n                ', tunable_type=float, default=3.0), speed_three_multiplier=sims4.tuning.tunable.Tunable(description='\n                How much faster speed three goes than normal speed. The game clock will\n                have its speed multiplied by this number.\n                ', tunable_type=float, default=7.0), super_speed_three_multiplier=sims4.tuning.tunable.Tunable(description='\n                How much faster super speed three goes than normal speed. The\n                game clock will have its speed multiplied by this number.\n                ', tunable_type=float, default=36.0), **kwargs)
+        super().__init__(
+            speed_two_multiplier=sims4.tuning.tunable.Tunable(
+                description=
+                '\n                How much faster speed two goes than normal speed. The game clock will\n                have its speed multiplied by this number.\n                ',
+                tunable_type=float,
+                default=3.0),
+            speed_three_multiplier=sims4.tuning.tunable.Tunable(
+                description=
+                '\n                How much faster speed three goes than normal speed. The game clock will\n                have its speed multiplied by this number.\n                ',
+                tunable_type=float,
+                default=7.0),
+            super_speed_three_multiplier=sims4.tuning.tunable.Tunable(
+                description=
+                '\n                How much faster super speed three goes than normal speed. The\n                game clock will have its speed multiplied by this number.\n                ',
+                tunable_type=float,
+                default=36.0),
+            **kwargs)
+
 
 class ClockSpeedMultipliers:
     __qualname__ = 'ClockSpeedMultipliers'
-    TUNABLE_INTERACTION_STARTUP_SPEED_MULTIPLIER = sims4.tuning.tunable.Tunable(description='\n        How much faster preroll autonomy speed goes than normal speed.\n        ', tunable_type=float, default=5.0)
-    CLOCK_SPEED_TYPE_MULTIPLIER_MAP = sims4.tuning.tunable.TunableMapping(description='\n        A mapping of ClockSpeedMultiplierTypes to clock speed multipliers.\n        ', key_type=sims4.tuning.tunable.TunableEnumEntry(description='\n            The ClockSpeedMultiplier to which we apply the multipliers.\n            ', tunable_type=ClockSpeedMultiplierType, default=ClockSpeedMultiplierType.DEFAULT), key_name='Clock Speed Multiplier Type', value_type=TunableClockSpeedMultipliers(), value_name='Clock Speed Multipliers')
+    TUNABLE_INTERACTION_STARTUP_SPEED_MULTIPLIER = sims4.tuning.tunable.Tunable(
+        description=
+        '\n        How much faster preroll autonomy speed goes than normal speed.\n        ',
+        tunable_type=float,
+        default=5.0)
+    CLOCK_SPEED_TYPE_MULTIPLIER_MAP = sims4.tuning.tunable.TunableMapping(
+        description=
+        '\n        A mapping of ClockSpeedMultiplierTypes to clock speed multipliers.\n        ',
+        key_type=sims4.tuning.tunable.TunableEnumEntry(
+            description=
+            '\n            The ClockSpeedMultiplier to which we apply the multipliers.\n            ',
+            tunable_type=ClockSpeedMultiplierType,
+            default=ClockSpeedMultiplierType.DEFAULT),
+        key_name='Clock Speed Multiplier Type',
+        value_type=TunableClockSpeedMultipliers(),
+        value_name='Clock Speed Multipliers')
 
     @classmethod
     def get_interaction_startup_speed_multiplier(cls):
@@ -538,13 +664,15 @@ class ClockSpeedMultipliers:
 
     @classmethod
     def speed_two_multiplier(cls, clock_speed_multiplier_type):
-        return cls.CLOCK_SPEED_TYPE_MULTIPLIER_MAP.get(clock_speed_multiplier_type).speed_two_multiplier
+        return cls.CLOCK_SPEED_TYPE_MULTIPLIER_MAP.get(
+            clock_speed_multiplier_type).speed_two_multiplier
 
     @classmethod
     def speed_three_multiplier(cls, clock_speed_multiplier_type):
-        return cls.CLOCK_SPEED_TYPE_MULTIPLIER_MAP.get(clock_speed_multiplier_type).speed_three_multiplier
+        return cls.CLOCK_SPEED_TYPE_MULTIPLIER_MAP.get(
+            clock_speed_multiplier_type).speed_three_multiplier
 
     @classmethod
     def super_speed_three_multiplier(cls, clock_speed_multiplier_type):
-        return cls.CLOCK_SPEED_TYPE_MULTIPLIER_MAP.get(clock_speed_multiplier_type).super_speed_three_multiplier
-
+        return cls.CLOCK_SPEED_TYPE_MULTIPLIER_MAP.get(
+            clock_speed_multiplier_type).super_speed_three_multiplier

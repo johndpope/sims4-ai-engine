@@ -3,6 +3,7 @@ import services
 import sims4.log
 logger = sims4.log.Logger('Reset')
 
+
 class ResettableObjectMixin:
     __qualname__ = 'ResettableObjectMixin'
 
@@ -14,6 +15,7 @@ class ResettableObjectMixin:
 
     def on_reset_element_hard_stop(self):
         pass
+
 
 class ResettableElement(elements.RunChildElement):
     __qualname__ = 'ResettableElement'
@@ -29,7 +31,8 @@ class ResettableElement(elements.RunChildElement):
         self._registered = False
 
     def set_parent_handle(self, handle):
-        logger.error('ResettableElements must be at the root of the chain {}', self)
+        logger.error('ResettableElements must be at the root of the chain {}',
+                     self)
         super().set_parent_handle(handle)
 
     def on_scheduled(self, timeline):
@@ -64,8 +67,9 @@ class ResettableElement(elements.RunChildElement):
             self.obj = None
 
     def __repr__(self):
-        return '<Resettable obj:{}, child:{}>'.format(self.obj, self.child_element)
+        return '<Resettable obj:{}, child:{}>'.format(self.obj,
+                                                      self.child_element)
 
     def tracing_repr(self):
-        return '<Resettable obj:{}, child:{}>'.format(self.obj, self.child_element.tracing_repr())
-
+        return '<Resettable obj:{}, child:{}>'.format(
+            self.obj, self.child_element.tracing_repr())

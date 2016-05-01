@@ -2,6 +2,7 @@ import traceback
 import enum
 import sims4.hash_util
 
+
 class ErrorCodes(enum.Int, export=False):
     __qualname__ = 'ErrorCodes'
     NO_ERROR = 0
@@ -35,7 +36,10 @@ class ErrorCodes(enum.Int, export=False):
     CORE_SERICES_SAVE_FAILED = 400
     ZONE_SERVICES_SAVE_FAILED = 500
 
-def generate_exception_code(error_code, exception):
-    exception_callstack = ''.join(traceback.format_exception(type(exception), exception, exception.__traceback__))
-    return '{}:{}:{}'.format(int(error_code), sims4.hash_util.hash64(str(exception)), sims4.hash_util.hash64(exception_callstack))
 
+def generate_exception_code(error_code, exception):
+    exception_callstack = ''.join(traceback.format_exception(
+        type(exception), exception, exception.__traceback__))
+    return '{}:{}:{}'.format(
+        int(error_code), sims4.hash_util.hash64(str(exception)),
+        sims4.hash_util.hash64(exception_callstack))

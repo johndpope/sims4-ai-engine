@@ -18,9 +18,11 @@ except ImportError:
     def print_object_ref(*_, **__):
         pass
 
+
 __unittest__ = 'test.objects.manager_tests'
 logger = sims4.log.Logger('IndexedManager')
 production_logger = sims4.log.ProductionLogger('IndexedManager')
+
 
 class TrackedIndexedObject:
     __qualname__ = 'TrackedIndexedObject'
@@ -29,6 +31,7 @@ class TrackedIndexedObject:
     def __init__(self, obj):
         self.ref = weakref.ref(obj)
         self.gc_gen_two_iteration = 0
+
 
 class IndexedObjectTracker:
     __qualname__ = 'IndexedObjectTracker'
@@ -85,8 +88,11 @@ class IndexedObjectTracker:
         self._check_need_full_gc()
 
     def _print_leaked_object(self, obj):
-        logger.always('Possible object leak for [{0}]. For more info use |py.describe {1} ({2})', type(obj), id(obj), hex(id(obj)))
+        logger.always(
+            'Possible object leak for [{0}]. For more info use |py.describe {1} ({2})',
+            type(obj), id(obj), hex(id(obj)))
         print_object_ref(obj)
+
 
 class CallbackTypes(enum.Int, export=False):
     __qualname__ = 'CallbackTypes'
@@ -94,8 +100,10 @@ class CallbackTypes(enum.Int, export=False):
     ON_OBJECT_REMOVE = 1
     ON_OBJECT_LOCATION_CHANGED = 2
 
+
 class ObjectIDError(Exception):
     __qualname__ = 'ObjectIDError'
+
 
 class IndexedManager(Service):
     __qualname__ = 'IndexedManager'
@@ -104,7 +112,9 @@ class IndexedManager(Service):
     @classmethod
     def remove_gc_collect_disable_reason(cls, reason):
         if reason not in cls._indexed_object_tracker.gc_callback_disable_reasons:
-            logger.error('Trying remove disable reason ({}), not added before', reason, owner='msantander')
+            logger.error('Trying remove disable reason ({}), not added before',
+                         reason,
+                         owner='msantander')
             return
         cls._indexed_object_tracker.gc_callback_disable_reasons.remove(reason)
 
@@ -158,10 +168,12 @@ class IndexedManager(Service):
         cur_id = None
         while self._objects:
             try:
-                (cur_id, object_being_shutdown) = next(iter(self._objects.items()))
+                (cur_id,
+                 object_being_shutdown) = next(iter(self._objects.items()))
                 self.remove(object_being_shutdown)
             except Exception:
-                logger.exception('Failed to remove {} from indexed manager', object_being_shutdown)
+                logger.exception('Failed to remove {} from indexed manager',
+                                 object_being_shutdown)
             finally:
                 if cur_id in self._objects:
                     del self._objects[cur_id]
@@ -177,13 +189,24 @@ class IndexedManager(Service):
         if callback in callback_list:
             callback_list.remove(callback)
         else:
-            logger.warn('Attempt to remove callback that was not registered on {}: {}:{}', self, callback_type, callback, owner='maxr')
+            logger.warn(
+                'Attempt to remove callback that was not registered on {}: {}:{}',
+                self,
+                callback_type,
+                callback,
+                owner='maxr')
 
     def add(self, obj):
         new_id = obj.id or id_generator.generate_object_id()
         if new_id in self._objects:
             existing_obj = self.get(new_id)
-            logger.callstack('ID collision detected. ID:{}, New Object:{}, Existing Object:{}', new_id, obj, existing_obj, level=sims4.log.LEVEL_ERROR, owner='tingyul')
+            logger.callstack(
+                'ID collision detected. ID:{}, New Object:{}, Existing Object:{}',
+                new_id,
+                obj,
+                existing_obj,
+                level=sims4.log.LEVEL_ERROR,
+                owner='tingyul')
             raise ObjectIDError
         self.call_pre_add(obj)
         self._objects[new_id] = obj
@@ -203,10 +226,14 @@ class IndexedManager(Service):
 
     def remove(self, obj):
         if obj.id not in self._objects:
-            logger.error('Attempting to remove an object that is not in this manager')
+            logger.error(
+                'Attempting to remove an object that is not in this manager')
             return
         if obj.id in self._objects_to_be_removed:
-            logger.error('Attempting to remove an object {} that is already in the process of being removed.'.format(obj), owner='tastle')
+            logger.error(
+                'Attempting to remove an object {} that is already in the process of being removed.'.format(
+                    obj),
+                owner='tastle')
             return
         try:
             self._objects_to_be_removed.append(obj.id)
@@ -219,7 +246,8 @@ class IndexedManager(Service):
             _weakrefutils.clear_weak_refs(obj)
             IndexedManager._indexed_object_tracker.add_object(obj)
         except Exception:
-            logger.exception('Exception thrown while calling remove on {0}', obj)
+            logger.exception('Exception thrown while calling remove on {0}',
+                             obj)
 
     def get(self, obj_id):
         return self._objects.get(obj_id, None)
@@ -244,4 +272,3 @@ class IndexedManager(Service):
     def call_post_remove(self, obj):
         if hasattr(obj, 'post_remove'):
             obj.post_remove()
-

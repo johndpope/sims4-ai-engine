@@ -46,4 +46,3 @@ except ImportError:
 
     def is_position_in_street(*args, **kwargs):
         return False
-

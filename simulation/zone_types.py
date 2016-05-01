@@ -1,5 +1,6 @@
 import enum
 
+
 class ZoneState(enum.Int, export=False):
     __qualname__ = 'ZoneState'
     ZONE_INIT = 0
@@ -9,4 +10,3 @@ class ZoneState(enum.Int, export=False):
     HITTING_THEIR_MARKS = 4
     RUNNING = 5
     SHUTDOWN_STARTED = 6
-

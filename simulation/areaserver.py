@@ -33,30 +33,41 @@ TELEMETRY_FIELD_NPC_COUNT = 'npcc'
 TELEMETRY_FIELD_PLAYER_COUNT = 'plyc'
 area_telemetry_writer = sims4.telemetry.TelemetryWriter(TELEMETRY_GROUP_AREA)
 
+
 class Settings:
     __qualname__ = 'Settings'
-    MAX_ZONE_SIMS = Tunable(int, 10, description='Number of Sims the Area Server will try to create on startup.')
-    GRIEF_STATISTIC = TunableReference(manager=services.get_instance_manager(sims4.resources.Types.STATISTIC), description='The affordance to push when the C API grief command is being run.')
+    MAX_ZONE_SIMS = Tunable(
+        int,
+        10,
+        description=
+        'Number of Sims the Area Server will try to create on startup.')
+    GRIEF_STATISTIC = TunableReference(
+        manager=services.get_instance_manager(sims4.resources.Types.STATISTIC),
+        description=
+        'The affordance to push when the C API grief command is being run.')
+
 
 class synchronous(object):
     __qualname__ = 'synchronous'
     __slots__ = ('callback_index', 'zone_id_index', 'session_id_index')
 
-    def __init__(self, callback_index=None, zone_id_index=None, session_id_index=None):
+    def __init__(self,
+                 callback_index=None,
+                 zone_id_index=None,
+                 session_id_index=None):
         self.callback_index = callback_index
         self.zone_id_index = zone_id_index
         self.session_id_index = session_id_index
 
     def __call__(self, fn):
-
         def wrapped(*args, **kwargs):
-
             def run_callback(ret):
                 if self.callback_index is not None:
                     finally_fn = args[self.callback_index]
                     if self.zone_id_index is not None:
                         if self.session_id_index is not None:
-                            finally_fn(args[self.zone_id_index], args[self.session_id_index], ret)
+                            finally_fn(args[self.zone_id_index],
+                                       args[self.session_id_index], ret)
                         else:
                             finally_fn(args[self.zone_id_index], ret)
                             finally_fn(ret)
@@ -75,6 +86,7 @@ class synchronous(object):
 
         return wrapped
 
+
 @exception_protected(None, log_invoke=True)
 def c_api_server_init(initial_ticks):
     services.start_services(initial_ticks)
@@ -83,9 +95,11 @@ def c_api_server_init(initial_ticks):
     status.info('c_api_server_init: Server initialized')
     return SUCCESS_CODE
 
+
 @exception_protected(None)
 def c_api_server_init_tick():
     return sims4.core_services.start_service_tick()
+
 
 @exception_protected(None)
 def c_api_server_tick(absolute_ticks):
@@ -101,15 +115,18 @@ def c_api_server_tick(absolute_ticks):
                 with sims4.zone_utils.global_zone_lock(zone.id):
                     persistence_service = services.get_persistence_service()
                     if persistence_service is not None and persistence_service.save_timeline:
-                        persistence_service.save_timeline.simulate(services.time_service().sim_now)
+                        persistence_service.save_timeline.simulate(
+                            services.time_service().sim_now)
                         return SUCCESS_CODE
                     zone.update(absolute_ticks)
     services.get_distributor_service().on_tick()
     return SUCCESS_CODE
 
+
 @exception_protected(None)
 def c_api_set_game_time(game_time_in_seconds):
     pass
+
 
 @exception_protected(EXCEPTION_ERROR_CODE)
 def c_api_server_ready():
@@ -118,8 +135,10 @@ def c_api_server_ready():
             import pydevd
             pydevd.on_break_point_hook = clock.on_break_point_hook
         except ImportError:
-            logger.exception('Unable to initialize gameplay components of the PyDev debugger due to exception.')
+            logger.exception(
+                'Unable to initialize gameplay components of the PyDev debugger due to exception.')
     return SUCCESS_CODE
+
 
 @synchronous(callback_index=0)
 @exception_protected(None, log_invoke=True)
@@ -129,22 +148,33 @@ def c_api_server_shutdown(callback):
     status.info('c_api_server_shutdown: Server shutdown')
     return SUCCESS_CODE
 
+
 @c_api_can_fail()
 @exception_protected(EXCEPTION_ERROR_CODE, log_invoke=True)
-def c_api_zone_init(zone_id, world_id, world_file, gameplay_zone_data_bytes=None, save_slot_data_bytes=None):
-    zone_data_proto = services.get_persistence_service().get_zone_proto_buff(zone_id)
+def c_api_zone_init(zone_id,
+                    world_id,
+                    world_file,
+                    gameplay_zone_data_bytes=None,
+                    save_slot_data_bytes=None):
+    zone_data_proto = services.get_persistence_service().get_zone_proto_buff(
+        zone_id)
     if zone_data_proto is not None:
         gameplay_zone_data = zone_data_proto.gameplay_zone_data
-    save_slot_data = services.get_persistence_service().get_save_slot_proto_buff()
-    zone = services._zone_manager.create_zone(zone_id, gameplay_zone_data, save_slot_data)
+    save_slot_data = services.get_persistence_service(
+    ).get_save_slot_proto_buff()
+    zone = services._zone_manager.create_zone(zone_id, gameplay_zone_data,
+                                              save_slot_data)
     zone.world_id = world_id
     zone_number = sims4.zone_utils.zone_numbers[zone_id]
-    status.info('Zone {:#08x} (Zone #{}) initialized'.format(zone_id, zone_number))
+    status.info('Zone {:#08x} (Zone #{}) initialized'.format(zone_id,
+                                                             zone_number))
     zone = services._zone_manager.get(zone_id)
     return SUCCESS_CODE
 
+
 @synchronous(callback_index=1, zone_id_index=0)
-@c_api_can_fail(error_return_values=(EXCEPTION_ERROR_CODE, TIMEOUT_ERROR_CODE, LOADSIMS_FAILED_ERROR_CODE))
+@c_api_can_fail(error_return_values=(EXCEPTION_ERROR_CODE, TIMEOUT_ERROR_CODE,
+                                     LOADSIMS_FAILED_ERROR_CODE))
 @exception_protected(EXCEPTION_ERROR_CODE, log_invoke=True)
 def c_api_zone_loaded(zone_id, callback):
     zone = services._zone_manager.get(zone_id)
@@ -153,6 +183,7 @@ def c_api_zone_loaded(zone_id, callback):
     zone.zone_spin_up_service.process_zone_loaded()
     status.info('Zone {:#08x} loaded'.format(zone_id))
     return SUCCESS_CODE
+
 
 @synchronous(callback_index=1, zone_id_index=0)
 @c_api_can_fail(error_return_values=(EXCEPTION_ERROR_CODE, TIMEOUT_ERROR_CODE))
@@ -165,24 +196,38 @@ def c_api_zone_shutdown(zone_id, callback):
         status.info('Zone {:#08x} shutdown'.format(zone_id))
     return SUCCESS_CODE
 
+
 @synchronous(callback_index=5, zone_id_index=4, session_id_index=0)
-@c_api_can_fail(error_return_values=(EXCEPTION_ERROR_CODE, TIMEOUT_ERROR_CODE, NO_HOUSEHOLD_ERROR_CODE, SIM_NOT_FOUND_ERROR_CODE))
+@c_api_can_fail(
+    error_return_values=(EXCEPTION_ERROR_CODE, TIMEOUT_ERROR_CODE,
+                         NO_HOUSEHOLD_ERROR_CODE, SIM_NOT_FOUND_ERROR_CODE))
 @exception_protected(EXCEPTION_ERROR_CODE, log_invoke=True)
-def c_api_client_connect(session_id, account_id, household_id, persona_name, zone_id, callback, active_sim_id, locale='none', edit_lot_mode=False):
-    account = services.account_service().get_account_by_id(account_id, try_load_account=True)
+def c_api_client_connect(session_id,
+                         account_id,
+                         household_id,
+                         persona_name,
+                         zone_id,
+                         callback,
+                         active_sim_id,
+                         locale='none',
+                         edit_lot_mode=False):
+    account = services.account_service().get_account_by_id(
+        account_id, try_load_account=True)
     if account is None:
         account = server.account.Account(account_id, persona_name)
     account.locale = locale
     TelemetryTuning.filter_tunable_hooks()
     zone = services.current_zone()
-    client = zone.client_manager.create_client(session_id, account, household_id)
+    client = zone.client_manager.create_client(session_id, account,
+                                               household_id)
     zone.on_client_connect(client)
     services.on_client_connect(client)
     yield_zone_id(services.current_zone_id())
     if client.household_id == SYSTEM_HOUSEHOLD_ID:
         zone.game_clock.restore_saved_clock_speed()
         return NO_HOUSEHOLD_ERROR_CODE
-    status.info('Client {:#08x} ({}) connected to zone {:#08x}'.format(session_id, persona_name, zone_id))
+    status.info('Client {:#08x} ({}) connected to zone {:#08x}'.format(
+        session_id, persona_name, zone_id))
     if edit_lot_mode:
         result = zone.do_build_mode_zone_spin_up(household_id)
     else:
@@ -191,32 +236,43 @@ def c_api_client_connect(session_id, account_id, household_id, persona_name, zon
         return EXCEPTION_ERROR_CODE
     return SUCCESS_CODE
 
+
 @synchronous(callback_index=2, zone_id_index=1, session_id_index=0)
 @c_api_can_fail(error_return_values=(EXCEPTION_ERROR_CODE, TIMEOUT_ERROR_CODE))
 @exception_protected(EXCEPTION_ERROR_CODE, log_invoke=True)
 def c_api_client_disconnect(session_id, zone_id, callback):
     logger.info('Client {0} disconnected in zone {1}', session_id, zone_id)
-    status.info('Client {:#08x} disconnected from zone {:#08x}'.format(session_id, zone_id))
+    status.info('Client {:#08x} disconnected from zone {:#08x}'.format(
+        session_id, zone_id))
     return SUCCESS_CODE
 
-def c_api_request_client_disconnect(session_id, zone_id, callback):
 
+def c_api_request_client_disconnect(session_id, zone_id, callback):
     def request_client_disconnect_gen(timeline):
         try:
             zone = services.current_zone()
             if zone is not None:
                 client_manager = zone.client_manager
                 client = client_manager.get(session_id)
-                logger.info('Client {0} starting save of zone {1}', session_id, zone_id)
-                yield services.get_persistence_service().save_to_scratch_slot_gen(timeline)
-                logger.info('Client {0} save completed for {1}', session_id, zone_id)
-                with telemetry_helper.begin_hook(area_telemetry_writer, TELEMETRY_HOOK_ZONE_EXIT, household=client.household) as hook:
-                    (player_sims, npc_sims) = services.sim_info_manager().get_player_npc_sim_count()
+                logger.info('Client {0} starting save of zone {1}', session_id,
+                            zone_id)
+                yield services.get_persistence_service(
+                ).save_to_scratch_slot_gen(timeline)
+                logger.info('Client {0} save completed for {1}', session_id,
+                            zone_id)
+                with telemetry_helper.begin_hook(
+                        area_telemetry_writer,
+                        TELEMETRY_HOOK_ZONE_EXIT,
+                        household=client.household) as hook:
+                    (player_sims, npc_sims) = services.sim_info_manager(
+                    ).get_player_npc_sim_count()
                     hook.write_int(TELEMETRY_FIELD_PLAYER_COUNT, player_sims)
                     hook.write_int(TELEMETRY_FIELD_NPC_COUNT, npc_sims)
                 zone.on_teardown(client)
                 if client is None:
-                    logger.error('Client {0} not in client manager from zone {1}', session_id, zone_id)
+                    logger.error(
+                        'Client {0} not in client manager from zone {1}',
+                        session_id, zone_id)
                     return callback(zone_id, session_id, NO_CLIENT_ERROR_CODE)
                 client_manager.remove(client)
             return callback(zone_id, session_id, SUCCESS_CODE)
@@ -224,7 +280,8 @@ def c_api_request_client_disconnect(session_id, zone_id, callback):
             logger.exception('Error disconnecting the client')
             return callback(zone_id, session_id, EXCEPTION_ERROR_CODE)
 
-    logger.info('Client {0} requesting disconnect in zone {1}', session_id, zone_id)
+    logger.info('Client {0} requesting disconnect in zone {1}', session_id,
+                zone_id)
     if zone_id == WORLDBUILDER_ZONE_ID:
         callback(zone_id, session_id, SUCCESS_CODE)
         return SUCCESS_CODE
@@ -233,8 +290,10 @@ def c_api_request_client_disconnect(session_id, zone_id, callback):
         persistence_service.save_using(request_client_disconnect_gen)
     return SUCCESS_CODE
 
+
 @synchronous(callback_index=3, zone_id_index=1, session_id_index=0)
-@c_api_can_fail(error_return_values=(EXCEPTION_ERROR_CODE, TIMEOUT_ERROR_CODE, LOADSIMS_FAILED_ERROR_CODE))
+@c_api_can_fail(error_return_values=(EXCEPTION_ERROR_CODE, TIMEOUT_ERROR_CODE,
+                                     LOADSIMS_FAILED_ERROR_CODE))
 @exception_protected(EXCEPTION_ERROR_CODE, log_invoke=True)
 def c_api_add_sims(session_id, zone_id, sim_ids, callback, add_to_skewer):
     zone = services._zone_manager.get(zone_id)
@@ -248,10 +307,15 @@ def c_api_add_sims(session_id, zone_id, sim_ids, callback, add_to_skewer):
         object_manager = services.object_manager()
         for sim_id in sim_ids:
             if sim_id in object_manager:
-                logger.error('Attempt to add a sim who is already in the zone.  Native likely has a logic error.', owner='mduke')
+                logger.error(
+                    'Attempt to add a sim who is already in the zone.  Native likely has a logic error.',
+                    owner='mduke')
             ret = sims.sim_spawner.SimSpawner.load_sim(sim_id)
             while not ret:
-                logger.error('Sim failed to load while spinning up sim_id: {}.', sim_id, owner='mduke')
+                logger.error(
+                    'Sim failed to load while spinning up sim_id: {}.',
+                    sim_id,
+                    owner='mduke')
                 return LOADSIMS_FAILED_ERROR_CODE
         if add_to_skewer:
             for sim_id in sim_ids:
@@ -261,6 +325,7 @@ def c_api_add_sims(session_id, zone_id, sim_ids, callback, add_to_skewer):
                         client.add_selectable_sim_info(sim_info)
     return SUCCESS_CODE
 
+
 @exception_protected(None)
 def c_api_setup_sim_spawner_data(zone_id, spawner_data):
     zone = services._zone_manager.get(zone_id)
@@ -268,19 +333,23 @@ def c_api_setup_sim_spawner_data(zone_id, spawner_data):
         zone.setup_spawner_data(spawner_data, zone_id)
     return SUCCESS_CODE
 
+
 @exception_protected(None, log_invoke=True)
 def c_api_remote_client_connect(zone_id, account_id):
     _set_remote_connected(zone_id, account_id, True)
 
+
 @exception_protected(None, log_invoke=True)
 def c_api_remote_client_disconnect(zone_id, account_id):
     _set_remote_connected(zone_id, account_id, False)
+
 
 def _set_remote_connected(zone_id, account_id, value):
     account = services.account_service().get_account_by_id(account_id)
     household = account.get_household(zone_id)
     if household is not None:
         household.remote_connected = value
+
 
 @c_api_can_fail()
 @exception_protected(0)
@@ -290,7 +359,7 @@ def c_api_get_household_funds(zone_id, household_id):
         return household.funds.money
     return SUCCESS_CODE
 
+
 @exception_protected(None)
 def c_api_grief():
     pass
-

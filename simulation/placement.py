@@ -172,18 +172,55 @@ except ImportError:
 
     NON_SUPPRESSED_FAILURE_GOAL_SCORE = 0
 
+
 class FGLTuning:
     __qualname__ = 'FGLTuning'
-    MAX_FGL_DISTANCE = Tunable(description='\n        The maximum distance searched by the Find Good Location code.\n        ', tunable_type=float, default=100.0)
-    SOCIAL_FGL_HEIGHT_TOLERANCE = Tunable(description='\n        Maximum height tolerance on the terrain we will use for the placement \n        of social jigs.\n        If this value needs to be retuned a GPE, an Animator and Motech should\n        be involved.\n        ', tunable_type=float, default=0.1)
+    MAX_FGL_DISTANCE = Tunable(
+        description=
+        '\n        The maximum distance searched by the Find Good Location code.\n        ',
+        tunable_type=float,
+        default=100.0)
+    SOCIAL_FGL_HEIGHT_TOLERANCE = Tunable(
+        description=
+        '\n        Maximum height tolerance on the terrain we will use for the placement \n        of social jigs.\n        If this value needs to be retuned a GPE, an Animator and Motech should\n        be involved.\n        ',
+        tunable_type=float,
+        default=0.1)
+
 
 logger = sims4.log.Logger('Placement')
 
-def generate_routing_goals_for_polygon(sim, polygon, polygon_surface, scoring_functions=None, orientation_restrictions=None, object_ids_to_ignore=None, flush_planner=False, sim_location_score_offset=0.0, add_sim_location_as_goal=True, los_reference_pt=None, score_density=2.5, max_points=100, min_score_to_ignore_outer_penalty=2, target_object=2, target_object_id=0, even_coverage_step=3, single_goal_only=False, los_routing_context=None, all_blocking_edges_block_los=False):
+
+def generate_routing_goals_for_polygon(sim,
+                                       polygon,
+                                       polygon_surface,
+                                       scoring_functions=None,
+                                       orientation_restrictions=None,
+                                       object_ids_to_ignore=None,
+                                       flush_planner=False,
+                                       sim_location_score_offset=0.0,
+                                       add_sim_location_as_goal=True,
+                                       los_reference_pt=None,
+                                       score_density=2.5,
+                                       max_points=100,
+                                       min_score_to_ignore_outer_penalty=2,
+                                       target_object=2,
+                                       target_object_id=0,
+                                       even_coverage_step=3,
+                                       single_goal_only=False,
+                                       los_routing_context=None,
+                                       all_blocking_edges_block_los=False):
     yield_to_irq()
     if los_routing_context is None:
         los_routing_context = sim.routing_context
-    return _placement.generate_routing_goals_for_polygon(sim.routing_location, polygon, polygon_surface, scoring_functions, orientation_restrictions, object_ids_to_ignore, sim.routing_context, flush_planner, sim_location_score_offset, add_sim_location_as_goal, los_reference_pt, score_density, max_points, min_score_to_ignore_outer_penalty, target_object_id, even_coverage_step, single_goal_only, los_routing_context, all_blocking_edges_block_los)
+    return _placement.generate_routing_goals_for_polygon(
+        sim.routing_location, polygon, polygon_surface, scoring_functions,
+        orientation_restrictions, object_ids_to_ignore, sim.routing_context,
+        flush_planner, sim_location_score_offset, add_sim_location_as_goal,
+        los_reference_pt, score_density, max_points,
+        min_score_to_ignore_outer_penalty, target_object_id,
+        even_coverage_step, single_goal_only, los_routing_context,
+        all_blocking_edges_block_los)
+
 
 class FGLSearchFlag(enum.IntFlags):
     __qualname__ = 'FGLSearchFlag'
@@ -202,7 +239,9 @@ class FGLSearchFlag(enum.IntFlags):
     USE_SIM_FOOTPRINT = 2048
     STAY_IN_CURRENT_BLOCK = 4096
 
+
 FGLSearchFlagsDefault = FGLSearchFlag.STAY_IN_CONNECTED_CONNECTIVITY_GROUP | FGLSearchFlag.SHOULD_TEST_ROUTING | FGLSearchFlag.CALCULATE_RESULT_TERRAIN_HEIGHTS | FGLSearchFlag.DONE_ON_MAX_RESULTS
+
 
 def _get_random_spiral_vector():
     switch_val = random.randint(0, 3)
@@ -214,6 +253,7 @@ def _get_random_spiral_vector():
         return -sims4.math.Vector3.X_AXIS()
     return -sims4.math.Vector3.Z_AXIS()
 
+
 def _get_next_spiral_vector(current_vector):
     if current_vector.x > 0.0:
         return sims4.math.Vector3.Z_AXIS()
@@ -223,16 +263,44 @@ def _get_next_spiral_vector(current_vector):
         return -sims4.math.Vector3.Z_AXIS()
     return sims4.math.Vector3.X_AXIS()
 
+
 class PlacementConstants:
     __qualname__ = 'PlacementConstants'
-    rotation_increment = TunableAngle(sims4.math.PI/8, description='The size of the angle-range that sims should use when determining facing constraints.')
-    default_random_weight_range = Tunable(float, 0.1, description='Range to adjust goal point final weighting score.  Only used for searches that set the use_random_weighting flag to true and do not pass in a value for the range.')
-    polygon_search_density = Tunable(float, 1, description='The number of points per unit of polygon area to test.')
-    avoid_sims_radius = Tunable(float, 1, description='How far from Sims (in meters) we try to place objects.')
-    max_points_per_search = Tunable(int, 150, description='This is how many individual positions will be checked when trying to find a good location for an object')
-    default_spiral_delta = Tunable(float, 0.75, description='This is the distance between points when finding a good location')
+    rotation_increment = TunableAngle(
+        sims4.math.PI / 8,
+        description=
+        'The size of the angle-range that sims should use when determining facing constraints.')
+    default_random_weight_range = Tunable(
+        float,
+        0.1,
+        description=
+        'Range to adjust goal point final weighting score.  Only used for searches that set the use_random_weighting flag to true and do not pass in a value for the range.')
+    polygon_search_density = Tunable(
+        float,
+        1,
+        description='The number of points per unit of polygon area to test.')
+    avoid_sims_radius = Tunable(
+        float,
+        1,
+        description='How far from Sims (in meters) we try to place objects.')
+    max_points_per_search = Tunable(
+        int,
+        150,
+        description=
+        'This is how many individual positions will be checked when trying to find a good location for an object')
+    default_spiral_delta = Tunable(
+        float,
+        0.75,
+        description=
+        'This is the distance between points when finding a good location')
 
-def _get_nearby_items(position, level, radius=None, exclude=None, flags=sims4.geometry.ObjectQuadTreeQueryFlag.NONE, query_filter=ItemType.UNKNOWN):
+
+def _get_nearby_items(position,
+                      level,
+                      radius=None,
+                      exclude=None,
+                      flags=sims4.geometry.ObjectQuadTreeQueryFlag.NONE,
+                      query_filter=ItemType.UNKNOWN):
     if radius is None:
         radius = routing.get_default_agent_radius()
     position_2d = sims4.math.Vector2(position.x, position.z)
@@ -242,7 +310,11 @@ def _get_nearby_items(position, level, radius=None, exclude=None, flags=sims4.ge
         for sim in exclude:
             exclude_ids.append(sim.sim_id)
     nearby_items = []
-    query = services.sim_quadtree().query(bounds, level, filter=query_filter, flags=flags, exclude=exclude_ids)
+    query = services.sim_quadtree().query(bounds,
+                                          level,
+                                          filter=query_filter,
+                                          flags=flags,
+                                          exclude=exclude_ids)
     for q in query:
         obj = q[0]
         if exclude and obj in exclude:
@@ -250,7 +322,14 @@ def _get_nearby_items(position, level, radius=None, exclude=None, flags=sims4.ge
         nearby_items.append(q[0])
     return nearby_items
 
-def get_nearby_sims(position, level, radius=None, exclude=None, stop_at_first_result=False, only_sim_position=False, only_sim_intended_position=False):
+
+def get_nearby_sims(position,
+                    level,
+                    radius=None,
+                    exclude=None,
+                    stop_at_first_result=False,
+                    only_sim_position=False,
+                    only_sim_intended_position=False):
     query_filter = (ItemType.SIM_POSITION, ItemType.SIM_INTENDED_POSITION)
     if only_sim_position:
         query_filter = ItemType.SIM_POSITION
@@ -259,17 +338,32 @@ def get_nearby_sims(position, level, radius=None, exclude=None, stop_at_first_re
     flags = sims4.geometry.ObjectQuadTreeQueryFlag.NONE
     if stop_at_first_result:
         flags |= sims4.geometry.ObjectQuadTreeQueryFlag.STOP_AT_FIRST_RESULT
-    return _get_nearby_items(position=position, level=level, radius=radius, exclude=exclude, flags=flags, query_filter=query_filter)
+    return _get_nearby_items(position=position,
+                             level=level,
+                             radius=radius,
+                             exclude=exclude,
+                             flags=flags,
+                             query_filter=query_filter)
 
-def get_nearby_route_goal_suppressors(position, level, radius=None, stop_at_first_result=False):
+
+def get_nearby_route_goal_suppressors(
+        position, level,
+        radius=None, stop_at_first_result=False):
     query_filter = ItemType.ROUTE_GOAL_SUPPRESSOR
     flags = sims4.geometry.ObjectQuadTreeQueryFlag.NONE
     if stop_at_first_result:
         flags |= sims4.geometry.ObjectQuadTreeQueryFlag.STOP_AT_FIRST_RESULT
-    return _get_nearby_items(position=position, level=level, radius=radius, exclude=[], flags=flags, query_filter=query_filter)
+    return _get_nearby_items(position=position,
+                             level=level,
+                             radius=radius,
+                             exclude=[],
+                             flags=flags,
+                             query_filter=query_filter)
+
 
 def search_polygon(polygon, ideal_transform=None):
-    raise RuntimeError('[bhill] This function is believed to be dead code and is scheduled for pruning. If this exception has been raised, the code is not dead and this exception should be removed.')
+    raise RuntimeError(
+        '[bhill] This function is believed to be dead code and is scheduled for pruning. If this exception has been raised, the code is not dead and this exception should be removed.')
     up = sims4.math.UP_AXIS
 
     def try_rotations(point):
@@ -281,7 +375,10 @@ def search_polygon(polygon, ideal_transform=None):
 
     points = []
     if polygon is not None:
-        for point in sims4.geometry.random_uniform_points_in_compound_polygon(polygon, num=int(PlacementConstants.polygon_search_density*polygon.area())):
+        for point in sims4.geometry.random_uniform_points_in_compound_polygon(
+                polygon,
+                num=int(PlacementConstants.polygon_search_density *
+                        polygon.area())):
             points.append(point)
     if ideal_transform is not None:
 
@@ -291,7 +388,8 @@ def search_polygon(polygon, ideal_transform=None):
         points.sort(key=sort_key)
     goals = []
     if ideal_transform is not None:
-        goals.append((ideal_transform.translation, ideal_transform.orientation))
+        goals.append((ideal_transform.translation, ideal_transform.orientation
+                      ))
         for goal in try_rotations(ideal_transform.translation):
             goals.append(goal)
     for point in points:
@@ -300,8 +398,10 @@ def search_polygon(polygon, ideal_transform=None):
     for goal in goals:
         yield goal
 
+
 def search_spiral(position, max_points=None, spiral_delta=None):
-    raise RuntimeError('[bhill] This function is believed to be dead code and is scheduled for pruning. If this exception has been raised, the code is not dead and this exception should be removed.')
+    raise RuntimeError(
+        '[bhill] This function is believed to be dead code and is scheduled for pruning. If this exception has been raised, the code is not dead and this exception should be removed.')
     k_up_vector = sims4.math.UP_AXIS
     k_delta_radians = PlacementConstants.rotation_increment
     max_points = max_points if max_points is not None else PlacementConstants.max_points_per_search
@@ -312,11 +412,11 @@ def search_spiral(position, max_points=None, spiral_delta=None):
     cur_spiral_multiplier = 0.0
     point_count = 0
     while point_count <= max_points:
-        num_increments_float = cur_spiral_multiplier/spiral_delta
+        num_increments_float = cur_spiral_multiplier / spiral_delta
         num_increments_int = math.ceil(num_increments_float)
         cur_spiral_increment = sims4.math.vector_flatten(cur_spiral)
         if num_increments_float > 0.0:
-            cur_spiral_increment = cur_spiral_increment/num_increments_float
+            cur_spiral_increment = cur_spiral_increment / num_increments_float
         else:
             num_increments_int = 1
         for _ in range(num_increments_int):
@@ -324,37 +424,50 @@ def search_spiral(position, max_points=None, spiral_delta=None):
             cur_position = cur_position + cur_spiral_increment
             cur_rotation = 0.0
             while cur_rotation < sims4.math.TWO_PI:
-                cur_orientation = sims4.math.Quaternion.from_axis_angle(cur_rotation, k_up_vector)
+                cur_orientation = sims4.math.Quaternion.from_axis_angle(
+                    cur_rotation, k_up_vector)
                 yield (cur_position, cur_orientation)
                 cur_rotation = cur_rotation + k_delta_radians
         next_spiral_arm = _get_next_spiral_vector(next_spiral_arm)
         if next_spiral_arm.x == 0.0:
             cur_spiral_multiplier = cur_spiral_multiplier + 1.0
-        cur_spiral = next_spiral_arm*spiral_delta*cur_spiral_multiplier
+        cur_spiral = next_spiral_arm * spiral_delta * cur_spiral_multiplier
 
-def find_good_location_with_generator(search_generator, polygons=None, polygon_forwards=None, routing_surface=None, context=None):
-    raise RuntimeError('[bhill] This function is believed to be dead code and is scheduled for pruning. If this exception has been raised, the code is not dead and this exception should be removed.')
+
+def find_good_location_with_generator(search_generator,
+                                      polygons=None,
+                                      polygon_forwards=None,
+                                      routing_surface=None,
+                                      context=None):
+    raise RuntimeError(
+        '[bhill] This function is believed to be dead code and is scheduled for pruning. If this exception has been raised, the code is not dead and this exception should be removed.')
     if routing_surface is None:
         if context is not None:
             routing_surface = context.search_strategy.start_routing_surface
         else:
             zone_id = sims4.zone_utils.get_zone_id()
-            routing_surface = routing.SurfaceIdentifier(zone_id, 0, routing.SURFACETYPE_WORLD)
+            routing_surface = routing.SurfaceIdentifier(
+                zone_id, 0, routing.SURFACETYPE_WORLD)
     if polygons is None:
         polygons = []
         polygon_forwards = []
         if context is not None:
             if context.search_strategy.object_id != 0:
-                obj = objects.system.find_object(context.search_strategy.object_id)
+                obj = objects.system.find_object(
+                    context.search_strategy.object_id)
                 p = obj.footprint_polygon
                 if p is not None:
                     polygons.append(p)
                     polygon_forwards.append(obj.orientation)
                 elif context.search_strategy.object_footprints:
                     for fp in context.search_strategy.object_footprints:
-                        p = _placement.get_placement_footprint_polygon(context.search_strategy.start_position, context.search_strategy.start_orientation, context.search_strategy.start_routing_surface, fp)
+                        p = _placement.get_placement_footprint_polygon(
+                            context.search_strategy.start_position,
+                            context.search_strategy.start_orientation,
+                            context.search_strategy.start_routing_surface, fp)
                         polygons.append(p)
-                        polygon_forwards.append(context.search_strategy.start_orientation)
+                        polygon_forwards.append(
+                            context.search_strategy.start_orientation)
                 else:
                     nNumPolygons = context.search_strategy.num_polygons
                     if nNumPolygons == 0:
@@ -367,9 +480,13 @@ def find_good_location_with_generator(search_generator, polygons=None, polygon_f
                     return
             elif context.search_strategy.object_footprints:
                 for fp in context.search_strategy.object_footprints:
-                    p = _placement.get_placement_footprint_polygon(context.search_strategy.start_position, context.search_strategy.start_orientation, context.search_strategy.start_routing_surface, fp)
+                    p = _placement.get_placement_footprint_polygon(
+                        context.search_strategy.start_position,
+                        context.search_strategy.start_orientation,
+                        context.search_strategy.start_routing_surface, fp)
                     polygons.append(p)
-                    polygon_forwards.append(context.search_strategy.start_orientation)
+                    polygon_forwards.append(
+                        context.search_strategy.start_orientation)
             else:
                 nNumPolygons = context.search_strategy.num_polygons
                 if nNumPolygons == 0:
@@ -398,7 +515,8 @@ def find_good_location_with_generator(search_generator, polygons=None, polygon_f
         elif context.search_strategy.allow_goals_in_sim_intended_positions:
             query_filter = ItemType.SIM_POSITION
         else:
-            query_filter = (ItemType.SIM_POSITION, ItemType.SIM_INTENDED_POSITION)
+            query_filter = (ItemType.SIM_POSITION,
+                            ItemType.SIM_INTENDED_POSITION)
     else:
         avoid_sims_radius = PlacementConstants.avoid_sims_radius
         zone = services.current_zone()
@@ -410,7 +528,8 @@ def find_good_location_with_generator(search_generator, polygons=None, polygon_f
             pass
         if not routing.test_point_placement_in_navmesh(routing_surface, pos):
             rejected_position = pos
-        for (polygon, forward_offset_angle) in itertools.product(polygons, polygon_forward_angles):
+        for (polygon, forward_offset_angle) in itertools.product(
+                polygons, polygon_forward_angles):
             p = sims4.geometry.Polygon(polygon)
             cur_centroid = p.centroid()
             delta_t = pos - cur_centroid
@@ -418,15 +537,23 @@ def find_good_location_with_generator(search_generator, polygons=None, polygon_f
             new_angle = sims4.math.yaw_quaternion_to_angle(ori)
             delta_r = new_angle - forward_offset_angle
             p.Rotate(delta_r)
-            if not routing.test_polygon_placement_in_navmesh(routing_surface, p):
+            if not routing.test_polygon_placement_in_navmesh(routing_surface,
+                                                             p):
                 break
             while quadtree is not None:
-                nearby_sims = quadtree.query(bounds=p, level=routing_surface.secondary_id, filter=query_filter, flags=sims4.geometry.ObjectQuadTreeQueryFlag.NONE, additional_radius=avoid_sims_radius)
+                nearby_sims = quadtree.query(
+                    bounds=p,
+                    level=routing_surface.secondary_id,
+                    filter=query_filter,
+                    flags=sims4.geometry.ObjectQuadTreeQueryFlag.NONE,
+                    additional_radius=avoid_sims_radius)
                 if nearby_sims:
                     break
         terrain_instance = services.terrain_service.terrain_object()
-        pos.y = terrain_instance.get_routing_surface_height_at(pos.x, pos.z, routing_surface)
+        pos.y = terrain_instance.get_routing_surface_height_at(pos.x, pos.z,
+                                                               routing_surface)
         return (pos, ori)
+
 
 def find_good_location(context):
     if context is None:
@@ -436,10 +563,13 @@ def find_good_location(context):
     if search_result == FGLSearchResult.SUCCESS:
         temp_list = context.search.get_results()
         fgl_loc = temp_list[0]
-        fgl_pos = sims4.math.Vector3(fgl_loc.position.x, fgl_loc.position.y, fgl_loc.position.z)
+        fgl_pos = sims4.math.Vector3(fgl_loc.position.x, fgl_loc.position.y,
+                                     fgl_loc.position.z)
         if not context.result_strategy.calculate_result_terrain_heights:
             terrain_instance = services.terrain_service.terrain_object()
-            fgl_pos.y = terrain_instance.get_routing_surface_height_at(fgl_loc.position.x, fgl_loc.position.z, fgl_loc.routing_surface_id)
+            fgl_pos.y = terrain_instance.get_routing_surface_height_at(
+                fgl_loc.position.x, fgl_loc.position.z,
+                fgl_loc.routing_surface_id)
         return (fgl_pos, fgl_loc.orientation)
     elif search_result == FGLSearchResult.FAIL_NO_RESULTS:
         logger.debug('FGL search returned 0 results.')
@@ -447,33 +577,80 @@ def find_good_location(context):
         logger.warn('FGL search failed: {0}.', str(search_result))
     return (None, None)
 
+
 class FindGoodLocationContext:
     __qualname__ = 'FindGoodLocationContext'
 
-    def __init__(self, starting_position=None, starting_orientation=None, starting_transform=None, starting_routing_surface=None, starting_location=None, starting_routing_location=None, object_id=None, object_footprints=None, object_polygons=None, routing_context=None, ignored_object_ids=None, max_distance=None, rotation_increment=None, position_increment=None, additional_avoid_sim_radius=0, restrictions=None, scoring_functions=None, offset_distance=None, starting_offset_orientation=None, offset_restrictions=None, random_seed=None, random_range_weighting=None, random_range_orientation=None, max_results=0, max_steps=1, min_score_threshold=None, max_score_threshold=None, height_tolerance=None, search_flags=FGLSearchFlagsDefault):
+    def __init__(self,
+                 starting_position=None,
+                 starting_orientation=None,
+                 starting_transform=None,
+                 starting_routing_surface=None,
+                 starting_location=None,
+                 starting_routing_location=None,
+                 object_id=None,
+                 object_footprints=None,
+                 object_polygons=None,
+                 routing_context=None,
+                 ignored_object_ids=None,
+                 max_distance=None,
+                 rotation_increment=None,
+                 position_increment=None,
+                 additional_avoid_sim_radius=0,
+                 restrictions=None,
+                 scoring_functions=None,
+                 offset_distance=None,
+                 starting_offset_orientation=None,
+                 offset_restrictions=None,
+                 random_seed=None,
+                 random_range_weighting=None,
+                 random_range_orientation=None,
+                 max_results=0,
+                 max_steps=1,
+                 min_score_threshold=None,
+                 max_score_threshold=None,
+                 height_tolerance=None,
+                 search_flags=FGLSearchFlagsDefault):
         if starting_routing_location is None:
             if starting_location is None:
                 if starting_routing_surface is None:
                     zone_id = sims4.zone_utils.get_zone_id()
-                    starting_routing_surface = routing.SurfaceIdentifier(zone_id, 0, routing.SURFACETYPE_WORLD)
+                    starting_routing_surface = routing.SurfaceIdentifier(
+                        zone_id, 0, routing.SURFACETYPE_WORLD)
                 if starting_transform is None:
                     if starting_orientation is None:
-                        starting_orientation = sims4.math.angle_to_yaw_quaternion(0.0)
-                    starting_routing_location = routing.Location(starting_position, starting_orientation, starting_routing_surface)
+                        starting_orientation = sims4.math.angle_to_yaw_quaternion(
+                            0.0)
+                    starting_routing_location = routing.Location(
+                        starting_position, starting_orientation,
+                        starting_routing_surface)
                 else:
-                    starting_routing_location = routing.Location(starting_transform.translation, starting_transform.orientation, starting_routing_surface)
-                    starting_routing_location = routing.Location(starting_location.transform.translation, starting_location.transform.orientation, starting_location.routing_surface)
+                    starting_routing_location = routing.Location(
+                        starting_transform.translation,
+                        starting_transform.orientation,
+                        starting_routing_surface)
+                    starting_routing_location = routing.Location(
+                        starting_location.transform.translation,
+                        starting_location.transform.orientation,
+                        starting_location.routing_surface)
             else:
-                starting_routing_location = routing.Location(starting_location.transform.translation, starting_location.transform.orientation, starting_location.routing_surface)
-        self.search_strategy = _placement.FGLSearchStrategyRouting(start_location=starting_routing_location)
+                starting_routing_location = routing.Location(
+                    starting_location.transform.translation,
+                    starting_location.transform.orientation,
+                    starting_location.routing_surface)
+        self.search_strategy = _placement.FGLSearchStrategyRouting(
+            start_location=starting_routing_location)
         self.result_strategy = _placement.FGLResultStrategyDefault()
-        self.search = _placement.FGLSearch(self.search_strategy, self.result_strategy)
+        self.search = _placement.FGLSearch(self.search_strategy,
+                                           self.result_strategy)
         if object_id is not None:
             self.search_strategy.object_id = object_id
         if object_polygons is not None:
             for polygon_wrapper in object_polygons:
                 if isinstance(polygon_wrapper, sims4.geometry.Polygon):
-                    self.search_strategy.add_polygon(polygon_wrapper, starting_routing_location.routing_surface)
+                    self.search_strategy.add_polygon(
+                        polygon_wrapper,
+                        starting_routing_location.routing_surface)
                 else:
                     p = polygon_wrapper[0]
                     p_routing_surface = polygon_wrapper[1]
@@ -484,17 +661,25 @@ class FindGoodLocationContext:
         if object_footprints is not None:
             for footprint_wrapper in object_footprints:
                 if footprint_wrapper is None:
-                    logger.error('None footprint wrapper found during FGL: {}', self)
+                    logger.error('None footprint wrapper found during FGL: {}',
+                                 self)
                 if isinstance(footprint_wrapper, sims4.resources.Key):
-                    p = _placement.get_placement_footprint_polygon(starting_routing_location.position, starting_routing_location.orientation, starting_routing_location.routing_surface, footprint_wrapper)
-                    self.search_strategy.add_polygon(p, starting_routing_location.routing_surface)
+                    p = _placement.get_placement_footprint_polygon(
+                        starting_routing_location.position,
+                        starting_routing_location.orientation,
+                        starting_routing_location.routing_surface,
+                        footprint_wrapper)
+                    self.search_strategy.add_polygon(
+                        p, starting_routing_location.routing_surface)
                 else:
                     fp_key = footprint_wrapper[0]
                     t = footprint_wrapper[1]
                     p_routing_surface = footprint_wrapper[2]
                     if p_routing_surface is None:
                         p_routing_surface = starting_routing_location.routing_surface
-                    p = _placement.get_placement_footprint_polygon(t.translation, t.orientation, p_routing_surface, fp_key)
+                    p = _placement.get_placement_footprint_polygon(
+                        t.translation, t.orientation, p_routing_surface,
+                        fp_key)
                     self.search_strategy.add_polygon(p, p_routing_surface)
         if routing_context is not None:
             self.search_strategy.routing_context = routing_context
@@ -517,7 +702,8 @@ class FindGoodLocationContext:
         if offset_distance is not None and offset_distance > 0:
             self.search_strategy.offset_distance = offset_distance
             if starting_offset_orientation is None:
-                starting_offset_orientation = sims4.math.angle_to_yaw_quaternion(0.0)
+                starting_offset_orientation = sims4.math.angle_to_yaw_quaternion(
+                    0.0)
             self.search_strategy.start_offset_orientation = starting_offset_orientation
             if offset_restrictions is not None:
                 while True:
@@ -544,7 +730,9 @@ class FindGoodLocationContext:
                 if random_range_orientation is None:
                     random_range_orientation = PlacementConstants.rotation_increment
                 self.search_strategy.random_range_orientation = random_range_orientation
-            if random_seed is not None and search_flags & (FGLSearchFlag.USE_RANDOM_WEIGHTING | FGLSearchFlag.USE_RANDOM_ORIENTATION):
+            if random_seed is not None and search_flags & (
+                    FGLSearchFlag.USE_RANDOM_WEIGHTING |
+                    FGLSearchFlag.USE_RANDOM_ORIENTATION):
                 self.search_strategy.random_seed = random_seed
             self.search_strategy.allow_too_close_to_obstacle = search_flags & FGLSearchFlag.ALLOW_TOO_CLOSE_TO_OBSTACLE
             self.search_strategy.allow_goals_in_sim_positions = search_flags & FGLSearchFlag.ALLOW_GOALS_IN_SIM_POSITIONS
@@ -558,17 +746,28 @@ class FindGoodLocationContext:
             self.result_strategy.done_on_max_results = search_flags & FGLSearchFlag.DONE_ON_MAX_RESULTS
             self.search_strategy.stay_in_current_block = search_flags & FGLSearchFlag.STAY_IN_CURRENT_BLOCK
 
-def footprint_intersection_check(resource_key, offset, orientation, circles, routing_surface=None):
-    raise RuntimeError('[bhill] This function is believed to be dead code and is scheduled for pruning. If this exception has been raised, the code is not dead and this exception should be removed.')
+
+def footprint_intersection_check(resource_key,
+                                 offset,
+                                 orientation,
+                                 circles,
+                                 routing_surface=None):
+    raise RuntimeError(
+        '[bhill] This function is believed to be dead code and is scheduled for pruning. If this exception has been raised, the code is not dead and this exception should be removed.')
     if routing_surface is None:
         zone_id = sims4.zone_utils.get_zone_id()
-        routing_surface = routing.SurfaceIdentifier(zone_id, 0, routing.SURFACETYPE_WORLD)
-    return _placement.test_footprint_intersection(resource_key, offset, orientation, routing_surface, circles)
+        routing_surface = routing.SurfaceIdentifier(zone_id, 0,
+                                                    routing.SURFACETYPE_WORLD)
+    return _placement.test_footprint_intersection(
+        resource_key, offset, orientation, routing_surface, circles)
+
 
 def add_placement_footprint(owner):
-    _placement.add_placement_footprint(owner.id, owner.zone_id, owner.footprint, owner.position, owner.orientation, owner.scale)
+    _placement.add_placement_footprint(owner.id, owner.zone_id,
+                                       owner.footprint, owner.position,
+                                       owner.orientation, owner.scale)
     owner.clear_raycast_context()
+
 
 def remove_placement_footprint(owner):
     _placement.remove_placement_footprint(owner.id, owner.zone_id)
-

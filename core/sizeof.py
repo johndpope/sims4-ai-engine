@@ -4,6 +4,7 @@ import itertools
 import sys
 from types import FunctionType, ModuleType
 
+
 def recursive_sizeof(roots, skip_atomic=False):
     handler_cache = {}
     pending = collections.deque((root, root) for root in roots)
@@ -25,6 +26,7 @@ def recursive_sizeof(roots, skip_atomic=False):
         results.append((root, sizes[id(root)]))
     return results
 
+
 def report(labeled_roots, skip_atomic=False):
     labels = []
     roots = []
@@ -37,6 +39,7 @@ def report(labeled_roots, skip_atomic=False):
     for (label, (root, size)) in zip(labels, results):
         counter[label] += size
     return counter
+
 
 def object_iter(obj):
     children = []
@@ -52,20 +55,31 @@ def object_iter(obj):
             children.append(v)
     return children
 
+
 def module_iter(module):
     name = module.__name__
     members = []
     module_dict = vars(module)
     for value in module_dict.values():
-        if isinstance(value, (type, FunctionType)) and value.__module__ != name:
+        if isinstance(value,
+                      (type, FunctionType)) and value.__module__ != name:
             pass
         members.append(value)
     members.append(vars(module))
     return members
 
+
 child_iter = iter
 dict_iter = lambda obj: itertools.chain.from_iterable(obj.items())
-HANDLERS = {collections.deque: child_iter, frozenset: child_iter, list: child_iter, set: child_iter, tuple: child_iter, dict: dict_iter, object: object_iter, ModuleType: module_iter}
+HANDLERS = {collections.deque: child_iter,
+            frozenset: child_iter,
+            list: child_iter,
+            set: child_iter,
+            tuple: child_iter,
+            dict: dict_iter,
+            object: object_iter,
+            ModuleType: module_iter}
+
 
 def enumerate_children(obj, handler_cache):
     t = type(obj)
@@ -80,4 +94,3 @@ def enumerate_children(obj, handler_cache):
     if handler is not None:
         return handler(obj)
     return ()
-

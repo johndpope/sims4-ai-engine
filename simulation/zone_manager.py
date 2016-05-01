@@ -4,6 +4,7 @@ import sims4.gsi.dispatcher
 import sims4.zone_utils
 import zone
 
+
 class ZoneManager(IndexedManager):
     __qualname__ = 'ZoneManager'
 
@@ -15,7 +16,8 @@ class ZoneManager(IndexedManager):
 
     def create_zone(self, zone_id, gameplay_zone_data, save_slot_data):
         if sims4.zone_utils._global_zone_id is not None:
-            raise RuntimeError('_global_zone_id is already set to {}'.format(sims4.zone_utils._global_zone_id))
+            raise RuntimeError('_global_zone_id is already set to {}'.format(
+                sims4.zone_utils._global_zone_id))
         sims4.zone_utils._global_zone_id = zone_id
         if save_slot_data is not None:
             save_slot_data_id = save_slot_data.slot_id
@@ -62,4 +64,3 @@ class ZoneManager(IndexedManager):
         for (zone_id, zone) in tuple(self.items()):
             while not zone.is_instantiated:
                 self.remove_id(zone_id)
-

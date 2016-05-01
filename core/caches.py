@@ -17,7 +17,9 @@ with sims4.reload.protected(globals()):
     skip_cache = False
     all_cached_functions = weakref.WeakSet()
     global_cache_version = 0
-CacheInfo = collections.namedtuple('CacheInfo', ('hits', 'misses', 'maxsize', 'currsize'))
+CacheInfo = collections.namedtuple('CacheInfo',
+                                   ('hits', 'misses', 'maxsize', 'currsize'))
+
 
 def clear_all_caches(force=False):
     global global_cache_version
@@ -26,13 +28,26 @@ def clear_all_caches(force=False):
         for fn in all_cached_functions:
             fn.cache.clear()
 
+
 if not sims4.reload.currently_reloading:
-    add_callbacks(CallbackEvent.TUNING_CODE_RELOAD, lambda : clear_all_caches(force=True))
+    add_callbacks(CallbackEvent.TUNING_CODE_RELOAD,
+                  lambda: clear_all_caches(force=True))
+
 
 def _double_check_failure(cache_result, fn_result, fn, *args, **kwargs):
     exc = AssertionError('Stale Cache Hit')
     frame = sys._getframe(2)
-    sims4.log.exception('Caches', 'cache result:{}, function result: {}, function:{} {} {}', cache_result, fn_result, fn, args, kwargs, exc=exc, frame=frame)
+    sims4.log.exception(
+        'Caches',
+        'cache result:{}, function result: {}, function:{} {} {}',
+        cache_result,
+        fn_result,
+        fn,
+        args,
+        kwargs,
+        exc=exc,
+        frame=frame)
+
 
 @decorator
 def cached(fn, maxsize=100, key=None, debug_cache=False):
@@ -49,13 +64,21 @@ def cached(fn, maxsize=100, key=None, debug_cache=False):
             wrapper.cache_version = global_cache_version
         try:
             if key_fn is None:
-                key = (args, _KEYWORD_MARKER, frozenset(kwargs.items())) if kwargs else args
+                key = (args, _KEYWORD_MARKER,
+                       frozenset(kwargs.items())) if kwargs else args
             else:
                 key = key_fn(*args, **kwargs)
             result = cache[key]
         except TypeError as exc:
-            if len(exc.args) == 1 and exc.args[0].startswith('unhashable type'):
-                logger.callstack('Cache failed on {} in function argument(s):\nargs={} kwargs={}\nTry one of the following: use hashable types as arguments to the function (e.g. tuple instead of list) or implement __hash__() on the unhashable object.', exc.args[0], args, kwargs, level=sims4.log.LEVEL_ERROR, owner='bhill')
+            if len(exc.args) == 1 and exc.args[0].startswith(
+                    'unhashable type'):
+                logger.callstack(
+                    'Cache failed on {} in function argument(s):\nargs={} kwargs={}\nTry one of the following: use hashable types as arguments to the function (e.g. tuple instead of list) or implement __hash__() on the unhashable object.',
+                    exc.args[0],
+                    args,
+                    kwargs,
+                    level=sims4.log.LEVEL_ERROR,
+                    owner='bhill')
             raise exc
         except KeyError:
             cache[key] = result = fn(*args, **kwargs)
@@ -64,7 +87,8 @@ def cached(fn, maxsize=100, key=None, debug_cache=False):
         return result
 
     def cache_info():
-        raise AttributeError('Cache statistics not tracked in optimized Python.')
+        raise AttributeError(
+            'Cache statistics not tracked in optimized Python.')
 
     wrapper.cache = {} if maxsize is None else collections.OrderedDict()
     wrapper.cache_version = global_cache_version
@@ -73,9 +97,9 @@ def cached(fn, maxsize=100, key=None, debug_cache=False):
     all_cached_functions.add(wrapper)
     return wrapper
 
+
 @decorator
 def cached_generator(fn, cache_decorator=cached, **cache_kwargs):
-
     @cache_decorator(**cache_kwargs)
     @functools.wraps(fn)
     def _wrapper(*args, **kwargs):
@@ -94,12 +118,14 @@ def cached_generator(fn, cache_decorator=cached, **cache_kwargs):
 
     return yielder
 
+
 def uncached(wrapper):
     return wrapper.uncached_function
 
+
 class BarebonesCache(dict):
     __qualname__ = 'BarebonesCache'
-    __slots__ = ('uncached_function',)
+    __slots__ = ('uncached_function', )
 
     def __init__(self, uncached_function):
         self.uncached_function = uncached_function
@@ -112,4 +138,3 @@ class BarebonesCache(dict):
     def __missing__(self, key):
         self[key] = ret = self.uncached_function(key)
         return ret
-

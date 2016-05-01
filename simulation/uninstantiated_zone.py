@@ -1,6 +1,7 @@
 from world.lot import Lot
 import services
 
+
 class UninstantiatedZone:
     __qualname__ = 'UninstantiatedZone'
 
@@ -23,4 +24,3 @@ class UninstantiatedZone:
     def load(self):
         zone_data_msg = self._get_zone_proto()
         self.lot.load(zone_data_msg.gameplay_zone_data)
-

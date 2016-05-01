@@ -9,7 +9,13 @@ logger = sims4.log.Logger('Alarms')
 with sims4.reload.protected(globals()):
     _ALARM_ELEMENT_HANDLES = {}
 
-def add_alarm(owner, time_span, callback, repeating=False, repeating_time_span=None, use_sleep_time=True):
+
+def add_alarm(owner,
+              time_span,
+              callback,
+              repeating=False,
+              repeating_time_span=None,
+              use_sleep_time=True):
     ts = services.time_service()
     if ts.sim_timeline is None:
         logger.error('Attempting to create alarm after TimeService shutdown.')
@@ -18,20 +24,46 @@ def add_alarm(owner, time_span, callback, repeating=False, repeating_time_span=N
         initial_time = ts.sim_timeline.now
     else:
         initial_time = ts.sim_timeline.future
-    return AlarmHandle(owner, callback, ts.sim_timeline, initial_time + time_span, repeating=repeating, repeat_interval=repeating_time_span or time_span, accurate_repeat=use_sleep_time)
+    return AlarmHandle(owner,
+                       callback,
+                       ts.sim_timeline,
+                       initial_time + time_span,
+                       repeating=repeating,
+                       repeat_interval=repeating_time_span or time_span,
+                       accurate_repeat=use_sleep_time)
 
-def add_alarm_real_time(owner, time_span, callback, repeating=False, use_sleep_time=True):
+
+def add_alarm_real_time(owner,
+                        time_span,
+                        callback,
+                        repeating=False,
+                        use_sleep_time=True):
     ts = services.time_service()
-    return AlarmHandle(owner, callback, ts.wall_clock_timeline, ts.wall_clock_timeline.now + time_span, repeating=repeating, repeat_interval=time_span, accurate_repeat=use_sleep_time)
+    return AlarmHandle(owner,
+                       callback,
+                       ts.wall_clock_timeline,
+                       ts.wall_clock_timeline.now + time_span,
+                       repeating=repeating,
+                       repeat_interval=time_span,
+                       accurate_repeat=use_sleep_time)
+
 
 def cancel_alarm(handle):
     handle.cancel()
+
 
 class AlarmHandle:
     __qualname__ = 'AlarmHandle'
     __slots__ = ('_element_handle', '_owner_ref', '__weakref__')
 
-    def __init__(self, owner, callback, t, when, repeating=False, repeat_interval=None, accurate_repeat=True):
+    def __init__(self,
+                 owner,
+                 callback,
+                 t,
+                 when,
+                 repeating=False,
+                 repeat_interval=None,
+                 accurate_repeat=True):
         if owner is None:
             raise ValueError('Alarm created without owner')
         if not repeating:
@@ -85,6 +117,7 @@ class AlarmHandle:
             return date_and_time.DATE_AND_TIME_ZERO
         return when
 
+
 class AlarmElement(elements.FunctionElement):
     __qualname__ = 'AlarmElement'
     __slots__ = ()
@@ -107,6 +140,7 @@ class AlarmElement(elements.FunctionElement):
             _unregister_auto_cleanup(self._element_handle)
             alarm_handle._teardown()
         super()._teardown()
+
 
 class RepeatingAlarmElement(AlarmElement):
     __qualname__ = 'RepeatingAlarmElement'
@@ -133,7 +167,10 @@ class RepeatingAlarmElement(AlarmElement):
         return result
 
     def __str__(self):
-        return '<{}; {}@{}; {}>'.format(self.shortname(), self.callback.__qualname__, self.callback.__code__.co_firstlineno, self.interval)
+        return '<{}; {}@{}; {}>'.format(
+            self.shortname(), self.callback.__qualname__,
+            self.callback.__code__.co_firstlineno, self.interval)
+
 
 class LossyRepeatingAlarmElement(RepeatingAlarmElement):
     __qualname__ = 'LossyRepeatingAlarmElement'
@@ -141,6 +178,7 @@ class LossyRepeatingAlarmElement(RepeatingAlarmElement):
     @staticmethod
     def timeline_now(t):
         return t.future
+
 
 def _register_auto_cleanup(alarm_handle):
     element_handle = alarm_handle._element_handle
@@ -152,16 +190,20 @@ def _register_auto_cleanup(alarm_handle):
         timeline = element_handle.timeline
         timeline.hard_stop(element_handle)
 
-    _ALARM_ELEMENT_HANDLES[id(element_handle)] = weakref.ref(alarm_handle, on_alarm_handle_collected)
+    _ALARM_ELEMENT_HANDLES[id(element_handle)] = weakref.ref(
+        alarm_handle, on_alarm_handle_collected)
+
 
 def _unregister_auto_cleanup(element_handle):
     ehid = id(element_handle)
     if ehid in _ALARM_ELEMENT_HANDLES:
         del _ALARM_ELEMENT_HANDLES[ehid]
 
+
 def _lookup_alarm_handle(element_handle):
     ehid = id(element_handle)
     return _ALARM_ELEMENT_HANDLES.get(ehid)()
+
 
 def get_alarm_data_for_gsi():
     alarm_data = []
@@ -189,4 +231,3 @@ def get_alarm_data_for_gsi():
     sort_key_fn = lambda data: data['ticks']
     alarm_data = sorted(alarm_data, key=sort_key_fn)
     return alarm_data
-
